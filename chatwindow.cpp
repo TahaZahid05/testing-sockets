@@ -13,7 +13,7 @@ ChatWindow::ChatWindow(QWidget *parent)
     connect(&webSocket, &QWebSocket::disconnected, this, &ChatWindow::onDisconnected);
 
     // Connect textChanged signal for real-time sending
-    connect(ui->messageInput, &QLineEdit::textChanged, this, &ChatWindow::onTextChanged);
+    connect(ui->sendButton, &QPushButton::clicked, this, &ChatWindow::onTextChanged);
 
     qDebug() << "Connecting to WebSocket server...";
     webSocket.open(QUrl("ws://192.168.0.34:12345"));  // Connect to Python WebSocket server
@@ -29,7 +29,7 @@ void ChatWindow::onConnected() {
 
 void ChatWindow::onMessageReceived(QString message) {
     qDebug() << "Message from server:" << message;
-    ui->chatDisplay->append("Server: " + message);
+    ui->chatDisplay->append(" " + message);
 }
 
 void ChatWindow::onDisconnected() {
@@ -37,7 +37,8 @@ void ChatWindow::onDisconnected() {
 }
 
 // New function to send messages in real-time
-void ChatWindow::onTextChanged(const QString &text) {
+void ChatWindow::onTextChanged() {
+    QString text = ui->messageInput->text();
     if (webSocket.isValid() && !text.isEmpty()) {
         webSocket.sendTextMessage(text);
         qDebug() << "Sent:" << text;
