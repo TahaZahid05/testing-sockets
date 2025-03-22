@@ -29,7 +29,9 @@ void ChatWindow::onConnected() {
 
 void ChatWindow::onMessageReceived(QString message) {
     qDebug() << "Message from server:" << message;
-    ui->chatDisplay->append(" " + message);
+    // ui->chatDisplay->append(" " + message);
+    ui->chatDisplay->moveCursor(QTextCursor::End); // Move cursor to end
+    ui->chatDisplay->insertPlainText(message + " "); // Insert text on the same line
 }
 
 void ChatWindow::onDisconnected() {

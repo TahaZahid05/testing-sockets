@@ -21,7 +21,7 @@ private slots:
     void onConnected();
     void onMessageReceived(QString message);
     void onDisconnected();
-    void onTextChanged(const QString &text);  // New slot for real-time updates
+    void onTextChanged();  // New slot for real-time updates
 
 private:
     Ui::ChatWindow *ui;
