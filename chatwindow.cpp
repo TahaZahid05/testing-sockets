@@ -16,6 +16,8 @@ ChatWindow::ChatWindow(QWidget *parent)
     connect(ui->sendButton, &QPushButton::clicked, this, &ChatWindow::onTextChanged);
 
     qDebug() << "Connecting to WebSocket server...";
+
+    // CHANGE THE FOLLOWING LINE BASED ON YOUR IPV4
     webSocket.open(QUrl("ws://192.168.0.34:12345"));  // Connect to Python WebSocket server
 }
 

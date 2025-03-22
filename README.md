@@ -20,23 +20,27 @@ This is a guide on how to get everthing up and running
 
     a) Click on "Open Project"
 
-    b) Go into our github repository and select "chatapp.pro" (Will appear as chatapp with Type as "Qt Project File"), and open
+    b) Go into our github repository and select "chatapp.pro" (Will appear as chatapp with Type as "Qt Project File"), and click on 
 
-    c) In top-left, click Build and then Build All Projects
+    "Open"
 
-    d) Click bottom right "Build" to keep track of the build
+    c) Before doing anything else, go into your repository and open "chatwindow.cpp". On Line 21, we have to change IPv4 address. Press the windows key, search cmd and "Run as administrator". Type "ipconfig", and look for IPv4 address, it should look like "192.168.x.xxx", copy this address and replace it in line 21.
 
-    e) If it show "Elapsed time", build has bene completed
+    d) Back into Qt Creator, In top-left, click Build and then Build All Projects
 
-    f) In github repository, open "server.py" which is in folder "server". Run this python script
+    e) Click bottom right "Build" to keep track of the build
+
+    f) If it show "Elapsed time", build has been completed
+
+    g) In github repository, open "server.py" which is in folder "server". Run this python script
     
-    g) In Qt Creator, in top-left, Click Build -> Run. Your program would open up and in "server.py" output terminal, you would see
+    h) In Qt Creator, in top-left, Click Build -> Run. Your program would open up and in "server.py" output terminal, you would see
     
     "WebSocket Server Started on ws://0.0.0.0:12345
     
     New client connected. Total clients: 1" 
 
-    h) Enter your "hello" in the lineEdit bar and then click on the button. Your text will now appear in the TextEdit and in 
+    i) Enter your "hello" in the lineEdit bar and then click on the button. Your text will now appear in the TextEdit and in 
     
     "server.py" terminal you would see "Received: hello". Server is receiving your input and writing into TextEdit. You can test it
     
