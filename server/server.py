@@ -4,7 +4,7 @@ import websockets
 # Set to keep track of all connected clients
 connected_clients = set()
 
-async def echo(websocket, path):
+async def echo(websocket):  # Add 'path' argument
     # Add client to the set
     connected_clients.add(websocket)
     print(f"New client connected. Total clients: {len(connected_clients)}")
@@ -27,9 +27,9 @@ async def echo(websocket, path):
         print(f"Client removed. Total clients: {len(connected_clients)}")
 
 async def main():
-    async with websockets.serve(echo, "0.0.0.0", 12345):  # Accept connections from any device
-        print("WebSocket Server Started on ws://0.0.0.0:12345")
-        await asyncio.Future()  # Keeps the server running
+    server = await websockets.serve(echo, "0.0.0.0", 12345)  # Accept connections from any device
+    print("WebSocket Server Started on ws://0.0.0.0:12345")
+    await server.wait_closed()  # Keeps the server running
 
 if __name__ == "__main__":
     asyncio.run(main())

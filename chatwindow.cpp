@@ -16,7 +16,7 @@ ChatWindow::ChatWindow(QWidget *parent)
     connect(ui->messageInput, &QLineEdit::textChanged, this, &ChatWindow::onTextChanged);
 
     qDebug() << "Connecting to WebSocket server...";
-    webSocket.open(QUrl("ws://localhost:12345"));  // Connect to Python WebSocket server
+    webSocket.open(QUrl("ws://192.168.0.34:12345"));  // Connect to Python WebSocket server
 }
 
 ChatWindow::~ChatWindow() {
