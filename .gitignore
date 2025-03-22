@@ -4,6 +4,7 @@ bin/
 *.o
 *.obj
 *chatapp.exe
+*.chatapp.pro.user
 *.dll
 *.so
 *.dylib
