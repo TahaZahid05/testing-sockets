@@ -3,6 +3,7 @@ build/
 bin/
 *.o
 *.obj
+*chatapp.exe
 *.dll
 *.so
 *.dylib
