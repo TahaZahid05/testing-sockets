@@ -7,6 +7,8 @@ bin/
 *.dll
 *.so
 *.dylib
+debug/
+release/
 
 # Ignore Qt-specific generated files
 *.moc
@@ -30,3 +32,4 @@ __pycache__/
 *.log
 *.tmp
 *.swp
+.qmake.stash
