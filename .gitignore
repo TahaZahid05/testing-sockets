@@ -13,6 +13,8 @@ bin/
 *.qrc
 *.qmake.stash
 Makefile
+Makefile.Debug
+Makefile.Release
 CMakeLists.txt.user
 
 # Ignore VS Code and JetBrains IDE files
