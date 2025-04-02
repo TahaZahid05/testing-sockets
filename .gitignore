@@ -1,0 +1,30 @@
+# Ignore build directories
+build/
+bin/
+*.o
+*.obj
+*chatapp.exe
+*.dll
+*.so
+*.dylib
+
+# Ignore Qt-specific generated files
+*.moc
+*.qrc
+*.qmake.stash
+Makefile
+CMakeLists.txt.user
+
+# Ignore VS Code and JetBrains IDE files
+.vscode/
+.idea/
+
+# Ignore Python virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+*.swp
