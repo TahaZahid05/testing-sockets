@@ -83,7 +83,9 @@ public:
     void insert(const std::string& id, const string& value, const string& prev_id = "") {
         version_vector[id[0]]++;
         size_t index = 0;
+        // cout << id << " " << prev_id << endl;
         if (prev_id != "" && id_to_index.find(prev_id) != id_to_index.end()) {
+            // cout << id_to_index[prev_id];
             index = id_to_index[prev_id] + 1;
         }
         else {
@@ -150,7 +152,9 @@ public:
             // Resolve concurrent inserts at the same position
             bool conflict = false;
             for (const auto& local_node : nodes) {
-                if (local_node.prev_id == other_node.prev_id) {
+                // cout << other_node.id << " " << local_node.id << endl;
+                // cout << other_node.value << " " << local_node.value << endl;
+                if (local_node.prev_id == other_node.prev_id && local_node.is_deleted) {
                     if (is_concurrent(local_node, other_node)){
                         conflict = true;
                         // Tie-breaker: lexicographical node ID comparison
@@ -171,8 +175,8 @@ public:
                         nodes.insert(nodes.begin() + index, other_node);
                     }
                     else {
-                        cout << local_node.version_vector.at('A') << endl;
-                        cout << other_node.version_vector.at('A') << " " << other_node.version_vector.at('B') << endl;
+                        // cout << local_node.version_vector.at('A') << endl;
+                        // cout << other_node.version_vector.at('A') << " " << other_node.version_vector.at('B') << endl;
                         conflict = true;
                         int index = id_to_index[local_node.id];
                         nodes.insert(nodes.begin() + index, other_node);

@@ -157,7 +157,7 @@ void MainWindow::onTextChanged() {
         QString inserted = currentText.mid(LastKnownText.length()-commonSuffix,1);
         string prev_id = "";
         int pos = LastKnownText.length()-commonSuffix;
-        qDebug() << currentText.length();
+        // qDebug() << currentText.length();
         for (const auto& node: r1.getNodes()) {
             if (!node.is_deleted){
                 if(r1.getNodeIndex(node) == pos-1) {
@@ -166,7 +166,7 @@ void MainWindow::onTextChanged() {
                 }
             }
         }
-        qDebug() << currentText.length();
+        // qDebug() << currentText.length();
         string id = clientId + to_string(charAdded);
         string val = inserted.toStdString();
         r1.insert(id,val,prev_id);
@@ -182,7 +182,7 @@ void MainWindow::onTextChanged() {
         }
         op["version"] = versionVec;
         allOperations.push_back(op);
-        qDebug() << currentText.length();
+        // qDebug() << currentText.length();
     }
     else if(commonPrefix+commonSuffix == currentText.length()) {
         // Get the deleted string segment (now handles strings instead of chars)
@@ -210,7 +210,7 @@ void MainWindow::onTextChanged() {
 }
 
 void MainWindow::sendTextMessage() {
-    qDebug() << "Checking: " << allOperations.size();
+    // qDebug() << "Checking: " << allOperations.size();
     for(QJsonObject &obj : allOperations) {
         if (!obj.contains("cursor_pos")) {
             // Add current cursor position if not already set
