@@ -15,7 +15,8 @@ async def echo(websocket):  # Add 'path' argument
 
             # Broadcast the received message to all connected clients
             for client in connected_clients:
-                await client.send(message)
+                if client != websocket:
+                    await client.send(message)
                     
 
     except websockets.exceptions.ConnectionClosed:

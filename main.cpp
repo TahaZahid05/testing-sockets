@@ -1,9 +1,16 @@
 #include <QApplication>
-#include "chatwindow.h"
+#include "MainWindow.h"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     QApplication app(argc, argv);
-    ChatWindow window;
-    window.show();
+
+    // Set application style
+    app.setStyle("Fusion");
+
+    // Create and show main window
+    MainWindow mainWin;
+    mainWin.show();
+
     return app.exec();
 }
