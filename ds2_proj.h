@@ -146,7 +146,7 @@ public:
     }
 
     void merge(RGA_Node& other_node){
-        if (search(other_node) == nullopt) {
+        if (search(other_node.id) == nullopt) {
             // Resolve concurrent inserts at the same position
             bool conflict = false;
             for (const auto& local_node : nodes) {
