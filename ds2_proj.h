@@ -167,12 +167,14 @@ public:
                     }
                     else if(isDominate(local_node.version_vector,other_node.version_vector)){
                         conflict = true;
-                        int index = id_to_index[local_node.id];
+                        int index = id_to_index[local_node.id] + 1;
                         nodes.insert(nodes.begin() + index, other_node);
                     }
                     else {
+                        cout << local_node.version_vector.at('A') << endl;
+                        cout << other_node.version_vector.at('A') << " " << other_node.version_vector.at('B') << endl;
                         conflict = true;
-                        int index = id_to_index[local_node.id] + 1;
+                        int index = id_to_index[local_node.id];
                         nodes.insert(nodes.begin() + index, other_node);
                     }
                     break;
