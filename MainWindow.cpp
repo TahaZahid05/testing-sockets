@@ -89,12 +89,15 @@ void MainWindow::onMessageReceived(QString message) {
                 node_version_vector[client] = seq;
             }
 
-            RGA remoteOp;
-            remoteOp.insert(id, value, prev_id);
-            RGA_Node& newNode = remoteOp.getNodes().back();
-            newNode.version_vector = node_version_vector;
+            // RGA remoteOp;
+            // remoteOp.insert(id, value, prev_id);
+            // qDebug() << remoteOp.print_document();
+            // RGA_Node& newNode = remoteOp.getNodes().back();
+            // newNode.version_vector = node_version_vector;
+            RGA_Node newNode(id, value, node_version_vector, prev_id);
 
-            r1.merge(remoteOp);
+            r1.merge(newNode);
+            qDebug() << "yes";
         }
         else if (type == "delete") {
             string id = obj["id"].toString().toStdString();

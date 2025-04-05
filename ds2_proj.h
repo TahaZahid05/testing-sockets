@@ -145,53 +145,92 @@ public:
         return std::nullopt;
     }
 
-    // Merge another RGA into this one (used for synchronization)
-    void merge(RGA& other) {
-        std::set<std::string> existing_ids;
-        for (const auto& node : nodes) {
-            existing_ids.insert(node.id);
-        }
-
-        for (const auto& other_node : other.nodes) {
-            if (!existing_ids.count(other_node.id)) {
-                // Resolve concurrent inserts at the same position
-                bool conflict = false;
-                for (const auto& local_node : nodes) {
-                    if (local_node.prev_id == other_node.prev_id) {
-                        if (is_concurrent(local_node, other_node)){
-                            conflict = true;
-                            // Tie-breaker: lexicographical node ID comparison
-                            if (other_node.id < local_node.id) {
-                                int index = id_to_index[local_node.id];
-                                nodes.insert(nodes.begin() + index, other_node);
-                            }
-                            else {
-                                int index = id_to_index[local_node.id] + 1;
-                                nodes.insert(nodes.begin() + index, other_node);
-                            }
-                            
-
-                        }
-                        else if(isDominate(local_node.version_vector,other_node.version_vector)){
-                            conflict = true;
+    void merge(RGA_Node& other_node){
+        if (search(other_node) == nullopt) {
+            // Resolve concurrent inserts at the same position
+            bool conflict = false;
+            for (const auto& local_node : nodes) {
+                if (local_node.prev_id == other_node.prev_id) {
+                    if (is_concurrent(local_node, other_node)){
+                        conflict = true;
+                        // Tie-breaker: lexicographical node ID comparison
+                        if (other_node.id < local_node.id) {
                             int index = id_to_index[local_node.id];
                             nodes.insert(nodes.begin() + index, other_node);
                         }
                         else {
-                            conflict = true;
                             int index = id_to_index[local_node.id] + 1;
                             nodes.insert(nodes.begin() + index, other_node);
                         }
-                        break;
+                        
+
                     }
-                }
-                if (!conflict) {
-                    insert(other_node.id, other_node.value, other_node.prev_id);
+                    else if(isDominate(local_node.version_vector,other_node.version_vector)){
+                        conflict = true;
+                        int index = id_to_index[local_node.id];
+                        nodes.insert(nodes.begin() + index, other_node);
+                    }
+                    else {
+                        conflict = true;
+                        int index = id_to_index[local_node.id] + 1;
+                        nodes.insert(nodes.begin() + index, other_node);
+                    }
+                    break;
                 }
             }
+            if (!conflict) {
+                insert(other_node.id, other_node.value, other_node.prev_id);
+            }
         }
-        other = *this;
     }
+
+    // // Merge another RGA into this one (used for synchronization)
+    // void merge(RGA& other) {
+    //     std::set<std::string> existing_ids;
+    //     for (const auto& node : nodes) {
+    //         existing_ids.insert(node.id);
+    //     }
+
+    //     for (const auto& other_node : other.nodes) {
+    //         if (!existing_ids.count(other_node.id)) {
+    //             // Resolve concurrent inserts at the same position
+    //             bool conflict = false;
+    //             for (const auto& local_node : nodes) {
+    //                 if (local_node.prev_id == other_node.prev_id) {
+    //                     if (is_concurrent(local_node, other_node)){
+    //                         conflict = true;
+    //                         // Tie-breaker: lexicographical node ID comparison
+    //                         if (other_node.id < local_node.id) {
+    //                             int index = id_to_index[local_node.id];
+    //                             nodes.insert(nodes.begin() + index, other_node);
+    //                         }
+    //                         else {
+    //                             int index = id_to_index[local_node.id] + 1;
+    //                             nodes.insert(nodes.begin() + index, other_node);
+    //                         }
+                            
+
+    //                     }
+    //                     else if(isDominate(local_node.version_vector,other_node.version_vector)){
+    //                         conflict = true;
+    //                         int index = id_to_index[local_node.id];
+    //                         nodes.insert(nodes.begin() + index, other_node);
+    //                     }
+    //                     else {
+    //                         conflict = true;
+    //                         int index = id_to_index[local_node.id] + 1;
+    //                         nodes.insert(nodes.begin() + index, other_node);
+    //                     }
+    //                     break;
+    //                 }
+    //             }
+    //             if (!conflict) {
+    //                 insert(other_node.id, other_node.value, other_node.prev_id);
+    //             }
+    //         }
+    //     }
+    //     other = *this;
+    // }
 
     // Print the current state of the document (ignoring deleted characters)
     string print_document() const {
