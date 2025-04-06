@@ -111,7 +111,7 @@ public:
     // }
 
     // Insert a character at a specific position
-    void insert(const std::string& id, const string& value, const string& prev_id = "", const std::map<char, int>& version_vector_pass) {
+    void insert(const std::string& id, const string& value, const std::map<char, int>& version_vector_pass, const string& prev_id = "") {
         RGA_Node new_node(id, value, version_vector_pass, prev_id);
         version_vector[id[0]]++;
         size_t index = 0;
@@ -129,7 +129,7 @@ public:
                     if (is_concurrent(node, new_node)) {
                         if (node.id < new_node.id) {
                             new_node.prev_id = node.id;
-                            insert(new_node.id, new_node.value, new_node.prev_id, new_node.version_vector);
+                            insert(new_node.id, new_node.value, new_node.version_vector, new_node.prev_id);
                         }
                         else {
                             break;
@@ -137,7 +137,7 @@ public:
                     }
                     else if (isDominate(node.version_vector,new_node.version_vector)) {
                         new_node.prev_id = node.id;
-                        insert(new_node.id, new_node.value, new_node.prev_id, new_node.version_vector);
+                        insert(new_node.id, new_node.value, new_node.version_vector, new_node.prev_id);
                     }
                     else {
                         break;
@@ -262,7 +262,7 @@ public:
                             // id_to_index[other_node.id] = index;
                             // nodes.insert(nodes.begin() + index, other_node);
                             // insert(other_node);
-                            insert(other_node.id,other_node.value,other_node.prev_id,other_node.version_vector);
+                            insert(other_node.id,other_node.value,other_node.version_vector,other_node.prev_id);
                         }
                         else {
                             // other_node.prev_id = local_node.id;
@@ -271,7 +271,7 @@ public:
                             // id_to_index[other_node.id] = index;
                             // nodes.insert(nodes.begin() + index, other_node);
                             other_node.prev_id = local_node.id;
-                            insert(other_node.id,other_node.value,other_node.prev_id,other_node.version_vector);
+                            insert(other_node.id,other_node.value,other_node.version_vector,other_node.prev_id);
                         }
                         
 
@@ -284,7 +284,7 @@ public:
                         // id_to_index[other_node.id] = index;
                         // nodes.insert(nodes.begin() + index, other_node);
                         other_node.prev_id = local_node.id;
-                        insert(other_node.id,other_node.value,other_node.prev_id,other_node.version_vector);
+                        insert(other_node.id,other_node.value,other_node.version_vector,other_node.prev_id);
                     }
                     else {
                         // cout << local_node.version_vector.at('A') << endl;
@@ -295,14 +295,14 @@ public:
                         // int index = id_to_index[local_node.id];
                         // id_to_index[other_node.id] = index;
                         // nodes.insert(nodes.begin() + index, other_node);
-                        insert(other_node.id,other_node.value,other_node.prev_id,other_node.version_vector);
+                        insert(other_node.id,other_node.value,other_node.version_vector,other_node.prev_id);
                     }
                     break;
                 }
             }
             if (!conflict) {
                 // insert(other_node);
-                insert(other_node.id, other_node.value, other_node.prev_id,other_node.version_vector);
+                insert(other_node.id, other_node.value, other_node.version_vector, other_node.prev_id);
             }
         }
     }
