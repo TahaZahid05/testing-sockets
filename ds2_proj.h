@@ -116,6 +116,7 @@ public:
         version_vector[id[0]]++;
         size_t index = 0;
         if (prev_id != "" && id_to_index.find(prev_id) != id_to_index.end()) {
+            //TO DO: Have to add code here to consider shifting prev_id forward after comparing version vector
             index = id_to_index[prev_id] + 1;
         }
         else {
