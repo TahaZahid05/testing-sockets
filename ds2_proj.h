@@ -140,6 +140,7 @@ public:
 
     // Delete a character by marking it as deleted (tombstone)
     void remove(const std::string& id) {
+        cout << "yes";
         version_vector[id[0]]--;
         if (id_to_index.find(id) != id_to_index.end()) {
             size_t index = id_to_index[id];
@@ -147,18 +148,23 @@ public:
             for (auto& node: nodes) {
                 if (node.id != id && !node.is_deleted) {
                     if(node.prev_id == deletedNode->id) {
-                        RGA_Node* tempNode = searchNode(deletedNode->prev_id);
-                        while (tempNode->is_deleted) {
-                            if (tempNode->prev_id == "") {
-                                break;
-                            }
-                            tempNode = searchNode(tempNode->prev_id);
-                        }
-                        if (!tempNode->is_deleted) {
-                            node.prev_id = tempNode->id;
+                        if(deletedNode->prev_id == "") {
+                            node.prev_id = "";
                         }
                         else {
-                            node.prev_id = "";
+                            RGA_Node* tempNode = searchNode(deletedNode->prev_id);
+                            while (tempNode->is_deleted) {
+                                if (tempNode->prev_id == "") {
+                                    break;
+                                }
+                                tempNode = searchNode(tempNode->prev_id);
+                            }
+                            if (!tempNode->is_deleted) {
+                                node.prev_id = tempNode->id;
+                            }
+                            else {
+                                node.prev_id = "";
+                            }
                         }
                     }
                     if (id_to_index[node.id] >= index) {
