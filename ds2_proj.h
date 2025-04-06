@@ -114,26 +114,60 @@ public:
         version_vector[id[0]]--;
         if (id_to_index.find(id) != id_to_index.end()) {
             size_t index = id_to_index[id];
-            for (int j = 0; j < nodes.size(); j++){
-                if(nodes[j].prev_id == nodes[index].id){
-                    RGA_Node tempNode = nodes[id_to_index[nodes[index].prev_id]];
-                    while (tempNode.is_deleted) {
-                        if (tempNode.prev_id == ""){
-                            break;
+            RGA_Node* deletedNode = searchNode(id);
+            for (auto& node: nodes) {
+                if (node.id != id && !node.is_deleted) {
+                    if(node.prev_id == deletedNode->id) {
+                        RGA_Node* tempNode = searchNode(deletedNode->prev_id);
+                        while (tempNode->is_deleted) {
+                            if (tempNode->prev_id == "") {
+                                break;
+                            }
+                            tempNode = searchNode(tempNode->prev_id);
                         }
-                        tempNode = nodes[id_to_index[tempNode.prev_id]];
+                        if (!tempNode->is_deleted) {
+                            node.prev_id = tempNode->id;
+                        }
+                        else {
+                            node.prev_id = "";
+                        }
                     }
-                    if(!tempNode.is_deleted){
-                        nodes[j].prev_id = tempNode.id;
+                    if (id_to_index[node.id] >= index) {
+                        id_to_index[node.id] -= 1;
+
                     }
-                    else{
-                        nodes[j].prev_id = "";
-                    }
-                    break;
                 }
             }
-            nodes[index].is_deleted = true;
+            deletedNode->is_deleted = true;
+            // for (int j = 0; j < nodes.size(); j++){
+            //     if(nodes[j].prev_id == nodes[index].id){
+            //         RGA_Node tempNode = nodes[id_to_index[nodes[index].prev_id]];
+            //         while (tempNode.is_deleted) {
+            //             if (tempNode.prev_id == ""){
+            //                 break;
+            //             }
+            //             tempNode = nodes[id_to_index[tempNode.prev_id]];
+            //         }
+            //         if(!tempNode.is_deleted){
+            //             nodes[j].prev_id = tempNode.id;
+            //         }
+            //         else{
+            //             nodes[j].prev_id = "";
+            //         }
+            //         break;
+            //     }
+            // }
         }
+
+    }
+
+    RGA_Node* searchNode(const string& idPass) {
+        for(auto& node : nodes) {
+            if (node.id == idPass) {
+                return &node;
+            }
+        }
+        throw std::runtime_error("Node not found: " + idPass);
     }
 
     // Search for a character by its ID
@@ -239,9 +273,10 @@ public:
     // }
 
     // Print the current state of the document (ignoring deleted characters)
-    string print_document() const {
+    string print_document() {
         string s1;
         for (const auto& node : nodes) {
+            cout << node.id << " " << node.is_deleted << " " << node.prev_id << " " << node.value << id_to_index[node.id] <<  endl;
             if(!node.is_deleted){
                 s1 += node.value;
             }
