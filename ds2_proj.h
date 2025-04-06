@@ -17,7 +17,6 @@ struct RGA_Node {
     bool is_deleted; // Tombstone to mark deletion
     std::string prev_id; // Stores previous character
     std::map<char, int> version_vector;
-
     RGA_Node(std::string id, std::string value, std::map<char, int> version_vector, string prev_id = ""): id(id), value(value), is_deleted(false), version_vector(version_vector), prev_id(prev_id) {}
 };
 
@@ -45,7 +44,7 @@ public:
         return id_to_index;
     }
 
-    std::map<char,int> getVersionVecotr() {
+    std::map<char,int> getVersionVector() {
         return version_vector;
     }
 
