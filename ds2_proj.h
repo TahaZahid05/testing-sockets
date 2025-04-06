@@ -117,6 +117,27 @@ public:
         size_t index = 0;
         if (prev_id != "" && id_to_index.find(prev_id) != id_to_index.end()) {
             //TO DO: Have to add code here to consider shifting prev_id forward after comparing version vector
+            for (const auto& node: nodes){
+                if (node.prev_id == new_node.prev_id && !node.is_deleted) {
+                    if (is_concurrent(node, new_node)) {
+                        if (node.id < new_node.id) {
+                            new_node.prev_id = node.id;
+                            insert(new_node.id, new_node.value, new_node.prev_id);
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                    else if (isDominate(node.version_vector,new_node.version_vector)) {
+                        new_node.prev_id = node.id;
+                        insert(new_node.id, new_node.value, new_node.prev_id);
+                    }
+                    else {
+                        break;
+                    }
+
+                }
+            }
             index = id_to_index[prev_id] + 1;
         }
         else {
