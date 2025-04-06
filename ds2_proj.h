@@ -66,9 +66,12 @@ public:
                 atleast_one_great = true;
             }
         }
-        for (const auto& [client, seq] : a){
-            if (b.count(client) == 0 && seq > 0){
-                atleast_one_great = true;
+        if(!atleast_one_great) {
+            for (const auto& [client, seq] : a){
+                if (b.count(client) == 0 && seq > 0){
+                    atleast_one_great = true;
+                    break;
+                }
             }
         }
         return atleast_one_great;
