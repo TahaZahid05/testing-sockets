@@ -169,7 +169,8 @@ void MainWindow::onTextChanged() {
         // qDebug() << currentText.length();
         string id = clientId + to_string(charAdded);
         string val = inserted.toStdString();
-        r1.insert(id,val,prev_id);
+        RGA_Node addNode(id,val,r1.getVersionVecotr(),prev_id);
+        r1.insert(addNode);
         QJsonObject op;
         op["type"] = "insert";
         op["id"] = QString::fromStdString(id);
