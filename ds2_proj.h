@@ -79,64 +79,64 @@ public:
         return !isDominate(a.version_vector,b.version_vector) && !isDominate(b.version_vector,a.version_vector); 
     }
 
-    void insert(const RGA_Node& insert_node){
-        version_vector[insert_node.id[0]]++;
-        size_t index = 0;
-        // cout << id << " " << prev_id << endl;
-        if (insert_node.prev_id != "" && id_to_index.find(insert_node.prev_id) != id_to_index.end()) {
-            // cout << id_to_index[prev_id];
-            index = id_to_index[insert_node.prev_id] + 1;
-        }
-        else {
-            for (const auto& node: nodes){
-                if (node.prev_id == insert_node.id) {
-                    index = id_to_index[node.id];
-                }
-            }
-        }
-        nodes.insert(nodes.begin() + index, insert_node);
-        id_to_index[insert_node.id] = index;
-
-        // Update indices for subsequent nodes
-        for (auto node : nodes) {
-            if (id_to_index[node.id] >= index && !node.is_deleted){
-                id_to_index[node.id] += 1;
-            }
-            if(node.prev_id == insert_node.prev_id && !node.is_deleted){
-                node.prev_id = insert_node.id;
-            }
-        }
-    }
-
-    // Insert a character at a specific position
-    // void insert(const std::string& id, const string& value, const string& prev_id = "") {
-    //     version_vector[id[0]]++;
+    // void insert(const RGA_Node& insert_node){
+    //     version_vector[insert_node.id[0]]++;
     //     size_t index = 0;
     //     // cout << id << " " << prev_id << endl;
-    //     if (prev_id != "" && id_to_index.find(prev_id) != id_to_index.end()) {
+    //     if (insert_node.prev_id != "" && id_to_index.find(insert_node.prev_id) != id_to_index.end()) {
     //         // cout << id_to_index[prev_id];
-    //         index = id_to_index[prev_id] + 1;
+    //         index = id_to_index[insert_node.prev_id] + 1;
     //     }
     //     else {
     //         for (const auto& node: nodes){
-    //             if (node.prev_id == id) {
+    //             if (node.prev_id == insert_node.id) {
     //                 index = id_to_index[node.id];
     //             }
     //         }
     //     }
-        
-    //     RGA_Node new_node(id, value, version_vector, prev_id);
-    //     nodes.insert(nodes.begin() + index, new_node);
-    //     id_to_index[id] = index;
+    //     nodes.insert(nodes.begin() + index, insert_node);
+    //     id_to_index[insert_node.id] = index;
 
     //     // Update indices for subsequent nodes
-    //     for (size_t i = index + 1; i < nodes.size(); ++i) {
-    //         if (nodes[i].prev_id == prev_id){
-    //             nodes[i].prev_id = new_node.id;
+    //     for (auto node : nodes) {
+    //         if (id_to_index[node.id] >= index && !node.is_deleted){
+    //             id_to_index[node.id] += 1;
     //         }
-    //         id_to_index[nodes[i].id] = i;
+    //         if(node.prev_id == insert_node.prev_id && !node.is_deleted){
+    //             node.prev_id = insert_node.id;
+    //         }
     //     }
     // }
+
+    // Insert a character at a specific position
+    void insert(const std::string& id, const string& value, const string& prev_id = "") {
+        version_vector[id[0]]++;
+        size_t index = 0;
+        // cout << id << " " << prev_id << endl;
+        if (prev_id != "" && id_to_index.find(prev_id) != id_to_index.end()) {
+            // cout << id_to_index[prev_id];
+            index = id_to_index[prev_id] + 1;
+        }
+        else {
+            for (const auto& node: nodes){
+                if (node.prev_id == id) {
+                    index = id_to_index[node.id];
+                }
+            }
+        }
+        
+        RGA_Node new_node(id, value, version_vector, prev_id);
+        nodes.insert(nodes.begin() + index, new_node);
+        id_to_index[id] = index;
+
+        // Update indices for subsequent nodes
+        for (size_t i = index + 1; i < nodes.size(); ++i) {
+            if (nodes[i].prev_id == prev_id){
+                nodes[i].prev_id = new_node.id;
+            }
+            id_to_index[nodes[i].id] = i;
+        }
+    }
 
     // Delete a character by marking it as deleted (tombstone)
     void remove(const std::string& id) {
@@ -223,32 +223,40 @@ public:
                         // Tie-breaker: lexicographical node ID comparison
                         if (other_node.id < local_node.id) {
                             int index = id_to_index[local_node.id];
-                            // nodes.insert(nodes.begin() + index, other_node);
-                            insert(other_node);
+                            nodes.insert(nodes.begin() + index, other_node);
+                            // insert(other_node);
                         }
                         else {
-                            other_node.prev_id = local_node.id;
-                            insert(other_node);
+                            // other_node.prev_id = local_node.id;
+                            // insert(other_node);
+                            int index = id_to_index[local_node.id] + 1;
+                            nodes.insert(nodes.begin() + index, other_node);
                         }
                         
 
                     }
                     else if(isDominate(local_node.version_vector,other_node.version_vector)){
                         conflict = true;
-                        other_node.prev_id = local_node.id;
-                        insert(other_node);
+                        // other_node.prev_id = local_node.id;
+                        // insert(other_node);
+                        int index = id_to_index[local_node.id] + 1;
+                        nodes.insert(nodes.begin() + index, other_node);
                     }
                     else {
                         // cout << local_node.version_vector.at('A') << endl;
                         // cout << other_node.version_vector.at('A') << " " << other_node.version_vector.at('B') << endl;
+                        // conflict = true;
+                        // insert(other_node);
                         conflict = true;
-                        insert(other_node);
+                        int index = id_to_index[local_node.id];
+                        nodes.insert(nodes.begin() + index, other_node);
                     }
                     break;
                 }
             }
             if (!conflict) {
-                insert(other_node);
+                // insert(other_node);
+                insert(other_node.id, other_node.value, other_node.prev_id);
             }
         }
     }
@@ -307,7 +315,6 @@ public:
         for (const auto& node : nodes) {
             cout << node.id << " " << node.is_deleted << " " << node.prev_id << " " << node.value << id_to_index[node.id] <<  endl;
             if(!node.is_deleted){
-                cout << node.id << " " << node.is_deleted << " " << node.prev_id << " " << node.value << " " << id_to_index[node.id] << endl;
                 s1 += node.value;
             }
 
