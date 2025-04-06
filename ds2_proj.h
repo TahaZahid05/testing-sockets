@@ -229,6 +229,7 @@ public:
                         // Tie-breaker: lexicographical node ID comparison
                         if (other_node.id < local_node.id) {
                             int index = id_to_index[local_node.id];
+                            id_to_index[other_node.id] = index;
                             nodes.insert(nodes.begin() + index, other_node);
                             // insert(other_node);
                         }
@@ -236,6 +237,7 @@ public:
                             // other_node.prev_id = local_node.id;
                             // insert(other_node);
                             int index = id_to_index[local_node.id] + 1;
+                            id_to_index[other_node.id] = index;
                             nodes.insert(nodes.begin() + index, other_node);
                         }
                         
@@ -246,6 +248,7 @@ public:
                         // other_node.prev_id = local_node.id;
                         // insert(other_node);
                         int index = id_to_index[local_node.id] + 1;
+                        id_to_index[other_node.id] = index;
                         nodes.insert(nodes.begin() + index, other_node);
                     }
                     else {
@@ -255,6 +258,7 @@ public:
                         // insert(other_node);
                         conflict = true;
                         int index = id_to_index[local_node.id];
+                        id_to_index[other_node.id] = index;
                         nodes.insert(nodes.begin() + index, other_node);
                     }
                     break;
