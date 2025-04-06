@@ -48,7 +48,7 @@ public:
         return version_vector;
     }
 
-    std::map<char,int> getNodeVersionVector(string id){
+    std::map<char,int> getNodeVersionVector(const string id){
         for(const auto& node: nodes){
             if (node.id == id) {
                 return node.version_vector;
@@ -112,11 +112,10 @@ public:
 
     // Insert a character at a specific position
     void insert(const std::string& id, const string& value, const string& prev_id = "") {
+        RGA_Node new_node(id, value, version_vector, prev_id);
         version_vector[id[0]]++;
         size_t index = 0;
-        // cout << id << " " << prev_id << endl;
         if (prev_id != "" && id_to_index.find(prev_id) != id_to_index.end()) {
-            // cout << id_to_index[prev_id];
             index = id_to_index[prev_id] + 1;
         }
         else {
@@ -127,7 +126,7 @@ public:
             }
         }
         
-        RGA_Node new_node(id, value, version_vector, prev_id);
+
         nodes.insert(nodes.begin() + index, new_node);
         id_to_index[id] = index;
 
@@ -230,17 +229,20 @@ public:
                         conflict = true;
                         // Tie-breaker: lexicographical node ID comparison
                         if (other_node.id < local_node.id) {
-                            int index = id_to_index[local_node.id];
-                            id_to_index[other_node.id] = index;
-                            nodes.insert(nodes.begin() + index, other_node);
+                            // int index = id_to_index[local_node.id];
+                            // id_to_index[other_node.id] = index;
+                            // nodes.insert(nodes.begin() + index, other_node);
                             // insert(other_node);
+                            insert(other_node.id,other_node.value,other_node.prev_id);
                         }
                         else {
                             // other_node.prev_id = local_node.id;
                             // insert(other_node);
-                            int index = id_to_index[local_node.id] + 1;
-                            id_to_index[other_node.id] = index;
-                            nodes.insert(nodes.begin() + index, other_node);
+                            // int index = id_to_index[local_node.id] + 1;
+                            // id_to_index[other_node.id] = index;
+                            // nodes.insert(nodes.begin() + index, other_node);
+                            other_node.prev_id = local_node.id;
+                            insert(other_node.id,other_node.value,other_node.prev_id);
                         }
                         
 
@@ -249,9 +251,11 @@ public:
                         conflict = true;
                         // other_node.prev_id = local_node.id;
                         // insert(other_node);
-                        int index = id_to_index[local_node.id] + 1;
-                        id_to_index[other_node.id] = index;
-                        nodes.insert(nodes.begin() + index, other_node);
+                        // int index = id_to_index[local_node.id] + 1;
+                        // id_to_index[other_node.id] = index;
+                        // nodes.insert(nodes.begin() + index, other_node);
+                        other_node.prev_id = local_node.id;
+                        insert(other_node.id,other_node.value,other_node.prev_id);
                     }
                     else {
                         // cout << local_node.version_vector.at('A') << endl;
@@ -259,9 +263,10 @@ public:
                         // conflict = true;
                         // insert(other_node);
                         conflict = true;
-                        int index = id_to_index[local_node.id];
-                        id_to_index[other_node.id] = index;
-                        nodes.insert(nodes.begin() + index, other_node);
+                        // int index = id_to_index[local_node.id];
+                        // id_to_index[other_node.id] = index;
+                        // nodes.insert(nodes.begin() + index, other_node);
+                        insert(other_node.id,other_node.value,other_node.prev_id);
                     }
                     break;
                 }
