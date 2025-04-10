@@ -75,8 +75,8 @@ private:
 
     // RGA related
     RGA r1;
-    char clientId;
     int charAdded;
+    char clientId;
     QString LastKnownText;
     vector<QJsonObject> allOperations;
 };

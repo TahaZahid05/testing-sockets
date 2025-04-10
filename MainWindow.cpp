@@ -6,7 +6,8 @@
 #include <QMessageBox>
 #include <QDebug>
 
-MainWindow::MainWindow(QWidget *parent)
+//TO-DO: ADD AUTO-GENERATED ID
+    MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), currentFile(""), clientId('A'), LastKnownText(""), charAdded(0)
 {
     // Create central text edit
@@ -60,7 +61,9 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle("Text Editor");
     resize(800, 600);
 
-    webSocket.open(QUrl("ws://192.168.0.35:12345"));
+    // webSocket.open(QUrl("ws://10.20.3.141:12345"));
+    // webSocket.open(QUrl("wss://46b9-103-125-241-66.ngrok-free.app"));
+    webSocket.open(QUrl("wss://6727-111-88-45-254.ngrok-free.app"));  // Use "wss://" for secure WebSockets
 }
 
 void MainWindow::onConnected() {
@@ -184,7 +187,7 @@ void MainWindow::onTextChanged() {
         }
         op["version"] = versionVec;
         allOperations.push_back(op);
-        // qDebug() << currentText.length();
+        // qDebug() << currentText.length(); 
     }
     else if(commonPrefix+commonSuffix == currentText.length()) {
         // Get the deleted string segment (now handles strings instead of chars)
@@ -202,10 +205,10 @@ void MainWindow::onTextChanged() {
                 r1.remove(node.id);
                 break;
             }
-        }
+        } 
     }
-    LastKnownText = currentText;
     charAdded += 1;
+    LastKnownText = currentText;
     r1.print_document();
     debounceTimer.start(3000);
 
