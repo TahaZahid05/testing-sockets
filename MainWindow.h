@@ -25,7 +25,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(char clientId = 'A', QWidget *parent = nullptr);
     ~MainWindow();
 
 protected:

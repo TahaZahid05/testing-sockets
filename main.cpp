@@ -1,16 +1,13 @@
 #include <QApplication>
 #include "MainWindow.h"
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
-    // Set application style
-    app.setStyle("Fusion");
+    // Use first command-line argument as clientId (default: 'A')
+    char clientId = (argc > 1) ? argv[1][0] : 'A';
 
-    // Create and show main window
-    MainWindow mainWin;
-    mainWin.show();
-
+    MainWindow window(clientId);
+    window.show();
     return app.exec();
 }

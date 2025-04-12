@@ -119,12 +119,12 @@ public:
             //TO DO: Have to add code here to consider shifting prev_id forward after comparing version vector
             for (const auto& node: nodes){
                 if (node.prev_id == new_node.prev_id && !node.is_deleted && node.id != new_node.id) {
-                    cout << node.id << " " << new_node.id << endl;
+                    // cout << node.id << " " << new_node.id << endl;
                     for (const auto& pair : node.version_vector) {
-                        std::cout << pair.first << ": " << pair.second << std::endl;
+                        // std::cout << pair.first << ": " << pair.second << std::endl;
                     }
                     for (const auto& pair : new_node.version_vector) {
-                        std::cout << pair.first << ": " << pair.second << std::endl;
+                        // std::cout << pair.first << ": " << pair.second << std::endl;
                     }
                     if (is_concurrent(node, new_node)) {
                         if (node.id < new_node.id) {
@@ -147,10 +147,10 @@ public:
 
                 }
             }
-            cout << "Finally" << endl;
-            cout << new_node.id << new_node.prev_id << endl;
+            // cout << "Finally" << endl;
+            // cout << new_node.id << new_node.prev_id << endl;
             index = id_to_index[prev_id] + 1;
-            cout << index << endl;
+            // cout << index << endl;
         }
         else {
             for (const auto& node: nodes){
@@ -175,7 +175,11 @@ public:
 
     // Delete a character by marking it as deleted (tombstone)
     void remove(const std::string& id) {
-        cout << "yes";
+// <<<<<<< fixed-delete
+//         cout << "yes";
+// =======
+        // cout << "yes";
+// >>>>>>> main
         // version_vector[id[0]]--;
         if (id_to_index.find(id) != id_to_index.end()) {
             size_t index = id_to_index[id];
@@ -364,8 +368,8 @@ public:
     string print_document() {
         string s1;
         for (const auto& node : nodes) {
-            cout << node.id << " " << node.is_deleted << " " << node.prev_id << " " << node.value << id_to_index[node.id] <<  endl;
             if(!node.is_deleted){
+                // cout << node.id << " " << node.is_deleted << " " << node.prev_id << " " << node.value << " " << id_to_index[node.id] <<  endl;
                 s1 += node.value;
             }
 
