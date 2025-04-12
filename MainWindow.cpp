@@ -61,7 +61,11 @@
     setWindowTitle("Text Editor");
     resize(800, 600);
 
+// <<<<<<< fixed-delete
+//     webSocket.open(QUrl("ws://192.168.0.34:12345"));
+// =======
     webSocket.open(QUrl("ws://192.168.164.150:12345"));
+// >>>>>>> main
     // webSocket.open(QUrl("wss://46b9-103-125-241-66.ngrok-free.app"));
     // webSocket.open(QUrl("wss://f023-111-88-45-254.ngrok-free.app"));  // Use "wss://" for secure WebSockets
 }

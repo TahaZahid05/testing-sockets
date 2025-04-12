@@ -175,7 +175,11 @@ public:
 
     // Delete a character by marking it as deleted (tombstone)
     void remove(const std::string& id) {
+// <<<<<<< fixed-delete
+//         cout << "yes";
+// =======
         // cout << "yes";
+// >>>>>>> main
         // version_vector[id[0]]--;
         if (id_to_index.find(id) != id_to_index.end()) {
             size_t index = id_to_index[id];
