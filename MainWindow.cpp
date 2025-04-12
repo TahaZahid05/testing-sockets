@@ -61,9 +61,9 @@
     setWindowTitle("Text Editor");
     resize(800, 600);
 
-    // webSocket.open(QUrl("ws://10.20.3.141:12345"));
+    webSocket.open(QUrl("ws://192.168.0.34:12345"));
     // webSocket.open(QUrl("wss://46b9-103-125-241-66.ngrok-free.app"));
-    webSocket.open(QUrl("wss://f023-111-88-45-254.ngrok-free.app"));  // Use "wss://" for secure WebSockets
+    // webSocket.open(QUrl("wss://f023-111-88-45-254.ngrok-free.app"));  // Use "wss://" for secure WebSockets
 }
 
 void MainWindow::onConnected() {
