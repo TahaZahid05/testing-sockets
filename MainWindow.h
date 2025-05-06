@@ -44,6 +44,7 @@ private slots:
     void onDisconnected();
     void onTextChanged();
     void sendTextMessage();
+    void onSocketError(QAbstractSocket::SocketError error);
 
 private:
     // UI Components
