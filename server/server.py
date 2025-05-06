@@ -39,7 +39,7 @@ async def echo(websocket):
             # Broadcast the message to all other clients
             for client in connected_clients:
                 if client != websocket:
-                    await client.send(f"[{client_id}] {message}")
+                    await client.send(message)
 
     except websockets.exceptions.ConnectionClosed:
         print(f"Client {client_id} disconnected.")
