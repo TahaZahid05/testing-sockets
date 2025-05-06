@@ -4,10 +4,10 @@
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
-    // Use first command-line argument as clientId (default: 'A')
-    char clientId = (argc > 1) ? argv[1][0] : 'A';
+    app.setStyle("Fusion");
 
-    MainWindow window(clientId);
-    window.show();
+    MainWindow mainWin;
+    mainWin.show();
+
     return app.exec();
 }
