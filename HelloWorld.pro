@@ -17,3 +17,5 @@ CONFIG += c++17
 
 # Include Qt WebSockets module
 QT += websockets
+
+OTHER_FILES += server.py
