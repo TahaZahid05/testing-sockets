@@ -45,7 +45,8 @@ private slots:
     void onTextChanged();
     void sendTextMessage();
 
-    void onPingReceived(quint64 elapsedTime);
+    void onPingReceived(quint64 elapsedTime, const QByteArray &payload);
+
     void checkDisconnect();
 
 private:
@@ -53,6 +54,7 @@ private:
     //Disconnected check
     QTimer currentTimer;
     bool pongReceived = false;
+    bool isConnected = true;
 
     // UI Components
     bool isRemoteChange = false;

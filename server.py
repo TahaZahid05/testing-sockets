@@ -8,7 +8,9 @@ message_history = []
 async def send_pings(websocket):
     while True:
         try:
+            print("Ping sent")
             await websocket.ping()
+            print("Pong received")
             await asyncio.sleep(5)
         except:
             break

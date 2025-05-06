@@ -8,7 +8,7 @@
 
 //TO-DO: ADD AUTO-GENERATED ID
     MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), currentFile(""), clientId('A'), LastKnownText(""), charAdded(0)
+    : QMainWindow(parent), currentFile(""), clientId('B'), LastKnownText(""), charAdded(0)
 {
     // Create central text edit
     textEdit = new QTextEdit(this);
@@ -34,9 +34,11 @@
     connect(&debounceTimer, &QTimer::timeout, this, &MainWindow::sendTextMessage);
     debounceTimer.setSingleShot(true);
 
-    connect(&webSocket, &QWebSocket::pong, this, &MainWindow::onPingReceived);
-    currentTimer.setInterval(8000);
+    pongReceived = false;
+    currentTimer.setInterval(500);
     connect(&currentTimer, &QTimer::timeout, this, &MainWindow::checkDisconnect);
+    connect(&webSocket, &QWebSocket::pong, this, &MainWindow::onPingReceived);
+    currentTimer.start();
 
     // Send message on Enter key (like a chat app)
     // connect(textEdit, &QTextEdit::textChanged, [this]() {
@@ -70,21 +72,28 @@
 
 }
 
-void MainWindow::onPingReceived(quint64) {
+void MainWindow::onPingReceived(quint64 elapsedTime, const QByteArray &payload) {
+    qDebug() << "yay";
     pongReceived = true;
+    isConnected = true;
 }
 
 void MainWindow::checkDisconnect() {
     if (!pongReceived) {
         qDebug() << "yes";
-        webSocket.abort();
+        // webSocket.abort();
+        isConnected = false;
     }
     pongReceived = false;
+    webSocket.ping();
 }
 
 void MainWindow::onConnected() {
     // textEdit->append("[System] Connected to chat server!");
+    webSocket.ping();
+    currentTimer.start();
     statusBar()->showMessage("Connected", 3000);
+    isConnected = true;
 }
 
 void MainWindow::onMessageReceived(QString message) {
@@ -249,7 +258,7 @@ void MainWindow::sendTextMessage() {
             // webSocket.
         }
     }
-    if(webSocket.isValid()) {
+    if(isConnected) {
         allOperations.clear();
     }
 }
@@ -298,12 +307,12 @@ void MainWindow::createActions()
     connect(reconnectAct, &QAction::triggered, this, &MainWindow::reconnect);
 }
 
-void MainWindow::reconnect()
-{
-    webSocket.open(QUrl("ws://192.168.0.34:12345"));
-    sendTextMessage();
+// void MainWindow::reconnect()
+// {
+//     webSocket.open(QUrl("ws://192.168.0.34:12345"));
+//     sendTextMessage();
 
-}
+// }
 
 
 void MainWindow::createMenus()
