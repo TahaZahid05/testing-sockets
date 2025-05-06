@@ -5,8 +5,11 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QDebug>
+#include <QInputDialog>  // For QInputDialog
+#include <QLineEdit>     // For QLineEdit
+#include <QJsonArray>
 
-//TO-DO: ADD AUTO-GENERATED ID
+
     MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), currentFile(""), clientId('A'), LastKnownText(""), charAdded(0)
 {
@@ -78,52 +81,56 @@ void MainWindow::onMessageReceived(QString message) {
         QJsonObject obj = doc.object();
         QString type = obj["type"].toString();
 
-        isRemoteChange = true; // Mark as remote change
+        if (type == "insert" || type == "delete") {
+            isRemoteChange = true; // Mark as remote change
 
-        if (type == "insert") {
-            string id = obj["id"].toString().toStdString();
-            string value = obj["value"].toString().toStdString();
-            string prev_id = obj["prev_id"].toString().toStdString();
-            QJsonObject vvJson = obj["version"].toObject();
-            map<char, int> node_version_vector;
-            for (const auto& key : vvJson.keys()) {
-                char client = key[0].toLatin1();
-                int seq = vvJson[key].toInt();
-                node_version_vector[client] = seq;
+            if (type == "insert") {
+                string id = obj["id"].toString().toStdString();
+                string value = obj["value"].toString().toStdString();
+                string prev_id = obj["prev_id"].toString().toStdString();
+                QJsonObject vvJson = obj["version"].toObject();
+                map<char, int> node_version_vector;
+                for (const auto& key : vvJson.keys()) {
+                    char client = key[0].toLatin1();
+                    int seq = vvJson[key].toInt();
+                    node_version_vector[client] = seq;
+                }
+
+                // RGA remoteOp;
+                // remoteOp.insert(id, value, prev_id);
+                // qDebug() << remoteOp.print_document();
+                // RGA_Node& newNode = remoteOp.getNodes().back();
+                // newNode.version_vector = node_version_vector;
+                RGA_Node newNode(id, value, node_version_vector, prev_id);
+
+                r1.merge(newNode);
+                // qDebug() << "yes";
+            }
+            else if (type == "delete") {
+                string id = obj["id"].toString().toStdString();
+                r1.remove(id);
             }
 
-            // RGA remoteOp;
-            // remoteOp.insert(id, value, prev_id);
-            // qDebug() << remoteOp.print_document();
-            // RGA_Node& newNode = remoteOp.getNodes().back();
-            // newNode.version_vector = node_version_vector;
-            RGA_Node newNode(id, value, node_version_vector, prev_id);
+            // Preserve cursor position during remote updates
+            int oldCursorPos = textEdit->textCursor().position();
+            QString newText = QString::fromStdString(r1.print_document());
 
-            r1.merge(newNode);
-            // qDebug() << "yes";
+            disconnect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
+            textEdit->setPlainText(newText);
+
+            // Restore cursor to original position
+            QTextCursor cursor = textEdit->textCursor();
+            cursor.setPosition(std::min<int>(oldCursorPos, static_cast<int>(newText.length())));
+
+            textEdit->setTextCursor(cursor);
+
+            LastKnownText = textEdit->toPlainText();
+            connect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
+
+            isRemoteChange = false; }// Reset flag
+        else if (type == "file_content" || type == "file_list") {
+            handleFileMessage(obj);
         }
-        else if (type == "delete") {
-            string id = obj["id"].toString().toStdString();
-            r1.remove(id);
-        }
-
-        // Preserve cursor position during remote updates
-        int oldCursorPos = textEdit->textCursor().position();
-        QString newText = QString::fromStdString(r1.print_document());
-
-        disconnect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
-        textEdit->setPlainText(newText);
-
-        // Restore cursor to original position
-        QTextCursor cursor = textEdit->textCursor();
-        cursor.setPosition(std::min<int>(oldCursorPos, static_cast<int>(newText.length())));
-
-        textEdit->setTextCursor(cursor);
-
-        LastKnownText = textEdit->toPlainText();
-        connect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
-
-        isRemoteChange = false; // Reset flag
     }
 }
 
@@ -271,6 +278,30 @@ void MainWindow::createActions()
     aboutAct = new QAction("&About", this);
     aboutAct->setStatusTip("Show the application's About box");
     connect(aboutAct, &QAction::triggered, this, &MainWindow::about);
+
+    openServerAct = new QAction("Open from &Server", this);
+    connect(openServerAct, &QAction::triggered, this, [this]() {
+        this->requestFileList(); // Show available files
+    });
+
+    saveServerAct = new QAction("&Save to Server", this);
+    connect(saveServerAct, &QAction::triggered, this, [this]() {
+        if (!this->currentServerFile.isEmpty()) {
+            this->saveFileToServer(this->currentServerFile);
+        } else {
+            bool ok;
+            QString filename = QInputDialog::getText(this,
+                                                     "Save to Server",
+                                                     "Enter filename:",
+                                                     QLineEdit::Normal,
+                                                     "",
+                                                     &ok);
+
+            if (ok && !filename.isEmpty()) {
+                this->saveFileToServer(filename);
+            }
+        }
+    });
 }
 
 
@@ -284,6 +315,9 @@ void MainWindow::createMenus()
     fileMenu->addAction(saveAsAct);
     fileMenu->addSeparator();
     fileMenu->addAction(exitAct);
+
+    fileMenu->addAction(openServerAct);
+    fileMenu->addAction(saveServerAct);
 
     // Help menu
     QMenu *helpMenu = menuBar()->addMenu("&Help");
@@ -443,6 +477,72 @@ void MainWindow::setCurrentFile(const QString &fileName)
         shownName = "untitled.txt";
     setWindowFilePath(shownName);
 }
+
+void MainWindow::loadFileFromServer(const QString& filename) {
+    QJsonObject message;
+    message["type"] = "request_file";
+    message["filename"] = filename;
+    webSocket.sendTextMessage(QJsonDocument(message).toJson());
+    currentServerFile = filename;
+}
+
+void MainWindow::saveFileToServer(const QString& filename) {
+    QJsonObject message;
+    message["type"] = "save_file";
+    message["filename"] = filename;
+    message["content"] = textEdit->toPlainText();
+    webSocket.sendTextMessage(QJsonDocument(message).toJson());
+    currentServerFile = filename;
+}
+
+void MainWindow::requestFileList() {
+    QJsonObject message;
+    message["type"] = "list_files";
+    webSocket.sendTextMessage(QJsonDocument(message).toJson());
+}
+
+void MainWindow::handleFileMessage(const QJsonObject &obj) {
+    QString type = obj["type"].toString();
+
+    if (type == "file_content") {
+        // Disconnect textChanged signal temporarily to prevent sync loops
+        disconnect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
+
+        QString content = obj["content"].toString();
+        QString filename = obj["filename"].toString();
+
+        // Clear and reset editor state
+        textEdit->clear();
+        r1 = RGA();  // Reset CRDT state
+
+        // Set new content
+        textEdit->setPlainText(content);
+        LastKnownText = content;
+        currentFile = filename;
+        currentServerFile = filename; // Track server file
+
+        // Reconnect signal
+        connect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
+
+    } else if (type == "file_list") {
+        QJsonArray filesArray = obj["files"].toArray();
+        QStringList fileNames;
+        for (const QJsonValue &val : filesArray) {
+            fileNames.append(val.toString());
+        }
+
+        bool ok;
+        QString selectedFile = QInputDialog::getItem(this, tr("Open File from Server"),
+                                                     tr("Select a file:"), fileNames, 0, false, &ok);
+        if (ok && !selectedFile.isEmpty()) {
+            QJsonObject requestObj;
+            requestObj["type"] = "request_file";
+            requestObj["filename"] = selectedFile;
+            webSocket.sendTextMessage(QJsonDocument(requestObj).toJson());
+        }
+    }
+}
+
 
 QString MainWindow::strippedName(const QString &fullFileName)
 {

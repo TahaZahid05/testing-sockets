@@ -44,10 +44,18 @@ private slots:
     void onTextChanged();
     void sendTextMessage();
 
+    void loadFileFromServer(const QString& filename);
+    void saveFileToServer(const QString& filename);
+    void requestFileList();
+
 private:
     // UI Components
     bool isRemoteChange = false;
     QTextEdit *textEdit;
+
+    QAction *openServerAct;
+    QAction *saveServerAct;
+
 
     // File handling
     QString currentFile;
@@ -61,6 +69,9 @@ private:
     QAction *exitAct;
     QAction *aboutAct;
     QTimer debounceTimer;
+
+    void handleFileMessage(const QJsonObject& message);
+    QString currentServerFile;
 
     void createActions();
     void createMenus();
