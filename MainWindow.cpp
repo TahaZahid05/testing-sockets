@@ -81,7 +81,6 @@ void MainWindow::onPingReceived(quint64 elapsedTime, const QByteArray &payload) 
 void MainWindow::checkDisconnect() {
     if (!pongReceived) {
         qDebug() << "yes";
-        // webSocket.abort();
         isConnected = false;
     }
     pongReceived = false;
@@ -253,7 +252,7 @@ void MainWindow::sendTextMessage() {
             // Add current cursor position if not already set
             obj["cursor_pos"] = textEdit->textCursor().position();
         }
-        if (webSocket.isValid()) {
+        if (isConnected) {
             webSocket.sendTextMessage(QJsonDocument(obj).toJson());
             // webSocket.
         }
@@ -307,12 +306,20 @@ void MainWindow::createActions()
     connect(reconnectAct, &QAction::triggered, this, &MainWindow::reconnect);
 }
 
-// void MainWindow::reconnect()
-// {
-//     webSocket.open(QUrl("ws://192.168.0.34:12345"));
-//     sendTextMessage();
+void MainWindow::reconnect()
+{
+    // webSocket.open(QUrl("ws://192.168.0.34:12345"));
+    // isConnected = true;
+    // sendTextMessage();
 
-// }
+    connect(&webSocket, &QWebSocket::connected, this, [this]() {
+        isConnected = true;
+        qDebug() << "Reconnected successfully!";
+        sendTextMessage();  // Safe to send now
+    });
+
+    webSocket.open(QUrl("ws://192.168.0.34:12345"));
+}
 
 
 void MainWindow::createMenus()
