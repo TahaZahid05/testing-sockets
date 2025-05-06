@@ -8,7 +8,7 @@
 
 //TO-DO: ADD AUTO-GENERATED ID
     MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), currentFile(""), clientId('B'), LastKnownText(""), charAdded(0)
+    : QMainWindow(parent), currentFile(""), clientId('A'), LastKnownText(""), charAdded(0)
 {
     // Create central text edit
     textEdit = new QTextEdit(this);
