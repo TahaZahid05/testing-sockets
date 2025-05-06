@@ -34,6 +34,10 @@
     connect(&debounceTimer, &QTimer::timeout, this, &MainWindow::sendTextMessage);
     debounceTimer.setSingleShot(true);
 
+    connect(&webSocket, &QWebSocket::pong, this, &MainWindow::onPingReceived);
+    currentTimer.setInterval(8000);
+    connect(&currentTimer, &QTimer::timeout, this, &MainWindow::checkDisconnect);
+
     // Send message on Enter key (like a chat app)
     // connect(textEdit, &QTextEdit::textChanged, [this]() {
     //     if (textEdit->toPlainText().endsWith("\n")) {
@@ -66,6 +70,17 @@
 
 }
 
+void MainWindow::onPingReceived(quint64) {
+    pongReceived = true;
+}
+
+void MainWindow::checkDisconnect() {
+    if (!pongReceived) {
+        qDebug() << "yes";
+        webSocket.abort();
+    }
+    pongReceived = false;
+}
 
 void MainWindow::onConnected() {
     // textEdit->append("[System] Connected to chat server!");

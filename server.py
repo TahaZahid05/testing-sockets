@@ -5,9 +5,18 @@ import websockets
 connected_clients = set()
 message_history = []
 
+async def send_pings(websocket):
+    while True:
+        try:
+            await websocket.ping()
+            await asyncio.sleep(5)
+        except:
+            break
+
 async def echo(websocket):  # Add 'path' argument
     # Add client to the set
     connected_clients.add(websocket)
+    asyncio.create_task(send_pings(websocket))
     print(f"New client connected. Total clients: {len(connected_clients)}")
 
     for old_message in message_history:

@@ -45,7 +45,15 @@ private slots:
     void onTextChanged();
     void sendTextMessage();
 
+    void onPingReceived(quint64 elapsedTime);
+    void checkDisconnect();
+
 private:
+
+    //Disconnected check
+    QTimer currentTimer;
+    bool pongReceived = false;
+
     // UI Components
     bool isRemoteChange = false;
     QTextEdit *textEdit;
