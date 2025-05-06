@@ -8,7 +8,7 @@
 
 //TO-DO: ADD AUTO-GENERATED ID
     MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), currentFile(""), clientId('A'), LastKnownText(""), charAdded(0)
+    : QMainWindow(parent), currentFile(""), clientId('B'), LastKnownText(""), charAdded(0)
 {
     // Create central text edit
     textEdit = new QTextEdit(this);
@@ -61,7 +61,7 @@
     setWindowTitle("Text Editor");
     resize(800, 600);
 
-    webSocket.open(QUrl("ws://192.168.0.103:12345"));
+    webSocket.open(QUrl("ws://192.168.0.34:12345"));
 
 
 }
@@ -233,7 +233,9 @@ void MainWindow::sendTextMessage() {
             // webSocket.
         }
     }
-    allOperations.clear();
+    if(webSocket.isValid()) {
+        allOperations.clear();
+    }
 }
 
 
@@ -283,6 +285,8 @@ void MainWindow::createActions()
 void MainWindow::reconnect()
 {
     webSocket.open(QUrl("ws://192.168.0.34:12345"));
+    sendTextMessage();
+
 }
 
 
