@@ -61,7 +61,9 @@
     setWindowTitle("Text Editor");
     resize(800, 600);
 
-    webSocket.open(QUrl("ws://192.168.0.34:12345"));
+    webSocket.open(QUrl("ws://192.168.0.103:12345"));
+
+
 }
 
 void MainWindow::onConnected() {
@@ -190,7 +192,7 @@ void MainWindow::onTextChanged() {
         op["version"] = versionVec;
         qDebug() << op["value"];
         allOperations.push_back(op);
-        // qDebug() << currentText.length(); 
+        // qDebug() << currentText.length();
     }
     else if(commonPrefix+commonSuffix == currentText.length()) {
         // Get the deleted string segment (now handles strings instead of chars)
@@ -208,7 +210,7 @@ void MainWindow::onTextChanged() {
                 r1.remove(node.id);
                 break;
             }
-        } 
+        }
     }
     charAdded += 1;
     LastKnownText = currentText;
@@ -250,12 +252,13 @@ void MainWindow::createActions()
     openAct->setStatusTip("Open an existing file");
     connect(openAct, &QAction::triggered, this, &MainWindow::openFile);
 
-    // saveAct = new QAction("&Save", this);
-    // saveAct->setShortcut(QKeySequence::Save);
-    // saveAct->setStatusTip("Save the document to disk");
-    // connect(saveAct, &QAction::triggered, this, &MainWindow::saveFile);
+    saveAct = new QAction("&Save", this);
+    saveAct->setShortcut(QKeySequence::Save);
+    saveAct->setStatusTip("Save the document to disk");
+    connect(saveAct, &QAction::triggered, this, &MainWindow::saveAsFile);  // Connect to saveAsFile
 
     saveAsAct = new QAction("Save &As...", this);
+    saveAsAct->setShortcut(QKeySequence::SaveAs);
     saveAsAct->setStatusTip("Save the document under a new name");
     connect(saveAsAct, &QAction::triggered, this, &MainWindow::saveAsFile);
 
@@ -309,14 +312,14 @@ void MainWindow::openFile()
     }
 }
 
-bool MainWindow::saveFile()
-{
-    if (currentFile.isEmpty()) {
-        return saveAsFile();
-    } else {
-        return saveFile(currentFile);
-    }
-}
+// bool MainWindow::saveFile()
+// {
+//     if (currentFile.isEmpty()) {
+//         return saveAsFile();
+//     } else {
+//         return saveFile(currentFile);
+//     }
+// }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
@@ -328,11 +331,37 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 
 bool MainWindow::saveAsFile()
 {
-    QString fileName = QFileDialog::getSaveFileName(this, "Save As");
-    if (fileName.isEmpty())
-        return false;
+    QString fileName;
 
-    return saveFile(fileName);
+    // If we have a current file and user clicked "Save" (not "Save As")
+    if (sender() == saveAct && !currentFile.isEmpty()) {
+        fileName = currentFile;
+    }
+    else {
+        // Otherwise prompt for filename (for "Save As" or first-time save)
+        fileName = QFileDialog::getSaveFileName(this, "Save As");
+        if (fileName.isEmpty()) {
+            return false;
+        }
+    }
+
+    QFile file(fileName);
+    if (!file.open(QFile::WriteOnly | QFile::Text)) {
+        QMessageBox::warning(this, "Text Editor",
+                             QString("Cannot write file %1:\n%2.")
+                                 .arg(QDir::toNativeSeparators(fileName),
+                                      file.errorString()));
+        return false;
+    }
+
+    QTextStream out(&file);
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    out << textEdit->toPlainText();
+    QApplication::restoreOverrideCursor();
+
+    setCurrentFile(fileName);
+    statusBar()->showMessage("File saved", 2000);
+    return true;
 }
 
 void MainWindow::about()
@@ -355,7 +384,7 @@ bool MainWindow::maybeSave()
 
     switch (ret) {
     case QMessageBox::Save:
-        return saveFile();
+        return saveAsFile();
     case QMessageBox::Cancel:
         return false;
     default:
@@ -383,25 +412,25 @@ void MainWindow::loadFile(const QString &fileName)
     statusBar()->showMessage("File loaded", 2000);
 }
 
-bool MainWindow::saveFile(const QString &fileName)
-{
-    QFile file(fileName);
-    if (!file.open(QFile::WriteOnly | QFile::Text)) {
-        QMessageBox::warning(this, "Text Editor",
-                             QString("Cannot write file %1:\n%2.")
-                                 .arg(QDir::toNativeSeparators(fileName), file.errorString()));
-        return false;
-    }
+// bool MainWindow::saveFile(const QString &fileName)
+// {
+//     QFile file(fileName);
+//     if (!file.open(QFile::WriteOnly | QFile::Text)) {
+//         QMessageBox::warning(this, "Text Editor",
+//                              QString("Cannot write file %1:\n%2.")
+//                                  .arg(QDir::toNativeSeparators(fileName), file.errorString()));
+//         return false;
+//     }
 
-    QTextStream out(&file);
-    QApplication::setOverrideCursor(Qt::WaitCursor);
-    out << textEdit->toPlainText();
-    QApplication::restoreOverrideCursor();
+//     QTextStream out(&file);
+//     QApplication::setOverrideCursor(Qt::WaitCursor);
+//     out << textEdit->toPlainText();
+//     QApplication::restoreOverrideCursor();
 
-    setCurrentFile(fileName);
-    statusBar()->showMessage("File saved", 2000);
-    return true;
-}
+//     setCurrentFile(fileName);
+//     statusBar()->showMessage("File saved", 2000);
+//     return true;
+// }
 
 void MainWindow::setCurrentFile(const QString &fileName)
 {

@@ -35,14 +35,12 @@ protected:
 private slots:
     void newFile();
     void openFile();
-    bool saveFile();
     bool saveAsFile();
     void about();
 
     void onConnected();
     void onMessageReceived(QString message);
     void onDisconnected();
-    // void sendMessage();
     void onTextChanged();
     void sendTextMessage();
 
@@ -69,6 +67,7 @@ private:
     void createStatusBar();
     bool maybeSave();
     void loadFile(const QString &fileName);
+    bool saveFile();
     bool saveFile(const QString &fileName);
     void setCurrentFile(const QString &fileName);
     QString strippedName(const QString &fullFileName);
