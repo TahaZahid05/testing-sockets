@@ -38,6 +38,7 @@ private slots:
     bool saveFile();
     bool saveAsFile();
     void about();
+    void reconnect();
 
     void onConnected();
     void onMessageReceived(QString message);
@@ -62,6 +63,7 @@ private:
     QAction *saveAsAct;
     QAction *exitAct;
     QAction *aboutAct;
+    QAction *reconnectAct;
     QTimer debounceTimer;
 
     void createActions();

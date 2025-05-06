@@ -3,15 +3,20 @@ import websockets
 
 # Set to keep track of all connected clients
 connected_clients = set()
+message_history = []
 
 async def echo(websocket):  # Add 'path' argument
     # Add client to the set
     connected_clients.add(websocket)
     print(f"New client connected. Total clients: {len(connected_clients)}")
 
+    for old_message in message_history:
+        await websocket.send(old_message)
+
     try:
         async for message in websocket:
             print(f"Received: {message}")
+            message_history.append(message)
 
             # Broadcast the received message to all connected clients
             for client in connected_clients:

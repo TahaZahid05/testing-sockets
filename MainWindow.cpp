@@ -80,25 +80,27 @@ void MainWindow::onMessageReceived(QString message) {
 
         if (type == "insert") {
             string id = obj["id"].toString().toStdString();
-            string value = obj["value"].toString().toStdString();
-            string prev_id = obj["prev_id"].toString().toStdString();
-            QJsonObject vvJson = obj["version"].toObject();
-            map<char, int> node_version_vector;
-            for (const auto& key : vvJson.keys()) {
-                char client = key[0].toLatin1();
-                int seq = vvJson[key].toInt();
-                node_version_vector[client] = seq;
+            if (r1.search(id) == std::nullopt){
+                string value = obj["value"].toString().toStdString();
+                string prev_id = obj["prev_id"].toString().toStdString();
+                QJsonObject vvJson = obj["version"].toObject();
+                map<char, int> node_version_vector;
+                for (const auto& key : vvJson.keys()) {
+                    char client = key[0].toLatin1();
+                    int seq = vvJson[key].toInt();
+                    node_version_vector[client] = seq;
+                }
+
+                // RGA remoteOp;
+                // remoteOp.insert(id, value, prev_id);
+                // qDebug() << remoteOp.print_document();
+                // RGA_Node& newNode = remoteOp.getNodes().back();
+                // newNode.version_vector = node_version_vector;
+                RGA_Node newNode(id, value, node_version_vector, prev_id);
+
+                r1.merge(newNode);
+                // qDebug() << "yes";
             }
-
-            // RGA remoteOp;
-            // remoteOp.insert(id, value, prev_id);
-            // qDebug() << remoteOp.print_document();
-            // RGA_Node& newNode = remoteOp.getNodes().back();
-            // newNode.version_vector = node_version_vector;
-            RGA_Node newNode(id, value, node_version_vector, prev_id);
-
-            r1.merge(newNode);
-            // qDebug() << "yes";
         }
         else if (type == "delete") {
             string id = obj["id"].toString().toStdString();
@@ -226,6 +228,7 @@ void MainWindow::sendTextMessage() {
         }
         if (webSocket.isValid()) {
             webSocket.sendTextMessage(QJsonDocument(obj).toJson());
+            webSocket.
         }
     }
     allOperations.clear();
@@ -268,6 +271,15 @@ void MainWindow::createActions()
     aboutAct = new QAction("&About", this);
     aboutAct->setStatusTip("Show the application's About box");
     connect(aboutAct, &QAction::triggered, this, &MainWindow::about);
+
+    reconnectAct = new QAction("Reconnect", this);
+    reconnectAct->setStatusTip("Reconnect with the server");
+    connect(reconnectAct, &QAction::triggered, this, &MainWindow::reconnect);
+}
+
+void MainWindow::reconnect()
+{
+    webSocket.open(QUrl("ws://192.168.0.34:12345"));
 }
 
 
@@ -285,6 +297,7 @@ void MainWindow::createMenus()
     // Help menu
     QMenu *helpMenu = menuBar()->addMenu("&Help");
     helpMenu->addAction(aboutAct);
+    helpMenu->addAction(reconnectAct);
 }
 
 void MainWindow::createStatusBar()
