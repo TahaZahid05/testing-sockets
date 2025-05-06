@@ -34,6 +34,12 @@
     connect(&debounceTimer, &QTimer::timeout, this, &MainWindow::sendTextMessage);
     debounceTimer.setSingleShot(true);
 
+    pongReceived = false;
+    currentTimer.setInterval(500);
+    connect(&currentTimer, &QTimer::timeout, this, &MainWindow::checkDisconnect);
+    connect(&webSocket, &QWebSocket::pong, this, &MainWindow::onPingReceived);
+    currentTimer.start();
+
     // Send message on Enter key (like a chat app)
     // connect(textEdit, &QTextEdit::textChanged, [this]() {
     //     if (textEdit->toPlainText().endsWith("\n")) {
@@ -66,10 +72,27 @@
 
 }
 
+void MainWindow::onPingReceived(quint64 elapsedTime, const QByteArray &payload) {
+    qDebug() << "yay";
+    pongReceived = true;
+    isConnected = true;
+}
+
+void MainWindow::checkDisconnect() {
+    if (!pongReceived) {
+        qDebug() << "yes";
+        isConnected = false;
+    }
+    pongReceived = false;
+    webSocket.ping();
+}
 
 void MainWindow::onConnected() {
     // textEdit->append("[System] Connected to chat server!");
+    webSocket.ping();
+    currentTimer.start();
     statusBar()->showMessage("Connected", 3000);
+    isConnected = true;
 }
 
 void MainWindow::onMessageReceived(QString message) {
@@ -236,12 +259,12 @@ void MainWindow::sendTextMessage() {
             // Add current cursor position if not already set
             obj["cursor_pos"] = textEdit->textCursor().position();
         }
-        if (webSocket.isValid()) {
+        if (isConnected) {
             webSocket.sendTextMessage(QJsonDocument(obj).toJson());
             // webSocket.
         }
     }
-    if(webSocket.isValid()) {
+    if(isConnected) {
         allOperations.clear();
     }
 }
@@ -292,9 +315,17 @@ void MainWindow::createActions()
 
 void MainWindow::reconnect()
 {
-    webSocket.open(QUrl("ws://192.168.0.34:12345"));
-    sendTextMessage();
+    // webSocket.open(QUrl("ws://192.168.0.34:12345"));
+    // isConnected = true;
+    // sendTextMessage();
 
+    connect(&webSocket, &QWebSocket::connected, this, [this]() {
+        isConnected = true;
+        qDebug() << "Reconnected successfully!";
+        sendTextMessage();  // Safe to send now
+    });
+
+    webSocket.open(QUrl("ws://192.168.0.34:12345"));
 }
 
 
