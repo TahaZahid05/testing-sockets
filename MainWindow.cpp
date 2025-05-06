@@ -33,7 +33,6 @@
     connect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
     connect(&debounceTimer, &QTimer::timeout, this, &MainWindow::sendTextMessage);
     debounceTimer.setSingleShot(true);
-    connect(&webSocket, QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::error), this, &MainWindow::onSocketError);
 
     // Send message on Enter key (like a chat app)
     // connect(textEdit, &QTextEdit::textChanged, [this]() {
@@ -67,16 +66,10 @@
 
 }
 
-void MainWindow::onSocketError(QAbstractSocket::SocketError error){
-    disconnect(&debounceTimer, &QTimer::timeout, this, &MainWindow::sendTextMessage);
-}
-
-
 
 void MainWindow::onConnected() {
     // textEdit->append("[System] Connected to chat server!");
     statusBar()->showMessage("Connected", 3000);
-    connect(&debounceTimer, &QTimer::timeout, this, &MainWindow::sendTextMessage);
 }
 
 void MainWindow::onMessageReceived(QString message) {
@@ -241,11 +234,7 @@ void MainWindow::sendTextMessage() {
             // webSocket.
         }
     }
-    // if(webSocket.isValid()) {
-    //     allOperations.clear();
-    // }
-
-    if (webSocket.state() == QAbstractSocket::ConnectedState){
+    if(webSocket.isValid()) {
         allOperations.clear();
     }
 }
