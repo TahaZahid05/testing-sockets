@@ -491,6 +491,8 @@ void MainWindow::saveFileToServer(const QString& filename) {
     message["type"] = "save_file";
     message["filename"] = filename;
     message["content"] = textEdit->toPlainText();
+    message["crdt_state"] = QString::fromStdString(r1.serializeState());
+    message["char_added"] = charAdded;
     webSocket.sendTextMessage(QJsonDocument(message).toJson());
     currentServerFile = filename;
 }
@@ -505,24 +507,36 @@ void MainWindow::handleFileMessage(const QJsonObject &obj) {
     QString type = obj["type"].toString();
 
     if (type == "file_content") {
-        // Disconnect textChanged signal temporarily to prevent sync loops
+        // Start atomic update
+        isRemoteChange = true;
         disconnect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
 
         QString content = obj["content"].toString();
         QString filename = obj["filename"].toString();
 
-        // Clear and reset editor state
-        textEdit->clear();
-        r1 = RGA();  // Reset CRDT state
+        // Reset and initialize RGA state
+        if (obj.contains("crdt_state")) {
+            try {
+                r1.deserializeState(obj["crdt_state"].toString().toStdString());
+                charAdded = obj["char_added"].toInt();
+            } catch (const std::exception& e) {
+                qWarning() << "Deserialization failed:" << e.what();
+                r1.initializeFromContent(content.toStdString(), clientId);
+                charAdded = content.length();
+            }
+        } else {
+            r1.initializeFromContent(content.toStdString(), clientId);
+            charAdded = content.length();
+        }
 
-        // Set new content
+        // Update UI
         textEdit->setPlainText(content);
         LastKnownText = content;
-        currentFile = filename;
-        currentServerFile = filename; // Track server file
+        currentServerFile = filename;
 
-        // Reconnect signal
+        // End atomic update
         connect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
+        isRemoteChange = false;
 
     } else if (type == "file_list") {
         QJsonArray filesArray = obj["files"].toArray();

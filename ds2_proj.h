@@ -175,11 +175,6 @@ public:
 
     // Delete a character by marking it as deleted (tombstone)
     void remove(const std::string& id) {
-// <<<<<<< fixed-delete
-//         cout << "yes";
-// =======
-        // cout << "yes";
-// >>>>>>> main
         // version_vector[id[0]]--;
         if (id_to_index.find(id) != id_to_index.end()) {
             size_t index = id_to_index[id];
@@ -243,6 +238,8 @@ public:
         }
         throw std::runtime_error("Node not found: " + idPass);
     }
+
+
 
     // Search for a character by its ID
     std::optional<std::string> search(const std::string& id) const {
@@ -376,7 +373,119 @@ public:
         }
         return s1;
     }
+
+    void initializeFromContent(const std::string& content, char clientId) {
+        nodes.clear();
+        id_to_index.clear();
+        version_vector.clear();
+        version_vector[clientId] = content.length();
+
+        string prev_id = "";
+        for (size_t i = 0; i < content.size(); i++) {
+            string id = string(1, clientId) + to_string(i+1);
+            string val(1, content[i]);
+            RGA_Node newNode(id, val, version_vector, prev_id);
+            nodes.push_back(newNode);
+            id_to_index[id] = i;
+            prev_id = id;
+        }
+    }
+
+    std::string serializeState() const {
+        std::string state;
+
+        // Serialize version vector
+        for (const auto& [client, seq] : version_vector) {
+            state += string(1, client) + ":" + to_string(seq) + ";";
+        }
+        state += "|";
+
+        // Serialize nodes
+        for (const auto& node : nodes) {
+            if (!node.is_deleted) {
+                state += node.id + "," + node.value + "," + (node.is_deleted ? "1" : "0") + "," + node.prev_id + ",";
+
+                // Serialize node's version vector
+                for (const auto& [client, seq] : node.version_vector) {
+                    state += string(1, client) + ":" + to_string(seq) + ",";
+                }
+                state += ";";
+            }
+        }
+        return state;
+    }
+
+    void deserializeState(const std::string& state) {
+        nodes.clear();
+        id_to_index.clear();
+        version_vector.clear();
+
+        size_t vv_end = state.find('|');
+        string vv_str = state.substr(0, vv_end);
+        string nodes_str = state.substr(vv_end + 1);
+
+        // Deserialize version vector
+        size_t vv_pos = 0;
+        while (vv_pos < vv_str.length()) {
+            size_t colon = vv_str.find(':', vv_pos);
+            if (colon == string::npos) break;
+
+            char client = vv_str[vv_pos];
+            size_t semicolon = vv_str.find(';', colon);
+            int seq = stoi(vv_str.substr(colon + 1, semicolon - colon - 1));
+
+            version_vector[client] = seq;
+            vv_pos = semicolon + 1;
+        }
+
+        // Deserialize nodes
+        size_t node_pos = 0;
+        while (node_pos < nodes_str.length()) {
+            size_t node_end = nodes_str.find(';', node_pos);
+            if (node_end == string::npos) break;
+
+            string node_str = nodes_str.substr(node_pos, node_end - node_pos);
+            vector<string> parts;
+            size_t part_start = 0;
+
+            while (true) {
+                size_t comma = node_str.find(',', part_start);
+                if (comma == string::npos) {
+                    parts.push_back(node_str.substr(part_start));
+                    break;
+                }
+                parts.push_back(node_str.substr(part_start, comma - part_start));
+                part_start = comma + 1;
+            }
+
+            if (parts.size() >= 4) {
+                string id = parts[0];
+                string value = parts[1];
+                bool is_deleted = parts[2] == "1";
+                string prev_id = parts[3];
+
+                map<char, int> node_vv;
+                for (size_t i = 4; i < parts.size(); i++) {
+                    string vv_part = parts[i];
+                    size_t colon = vv_part.find(':');
+                    if (colon != string::npos) {
+                        char client = vv_part[0];
+                        int seq = stoi(vv_part.substr(colon + 1));
+                        node_vv[client] = seq;
+                    }
+                }
+
+                RGA_Node node(id, value, node_vv, prev_id);
+                node.is_deleted = is_deleted;
+                nodes.push_back(node);
+                id_to_index[id] = nodes.size() - 1;
+            }
+
+            node_pos = node_end + 1;
+        }
+    }
 };
+
 
 
 #endif
