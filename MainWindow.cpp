@@ -61,7 +61,7 @@
     setWindowTitle("Text Editor");
     resize(800, 600);
 
-    webSocket.open(QUrl("ws://192.168.164.150:12345"));
+    webSocket.open(QUrl("ws://192.168.0.34:12345"));
 }
 
 void MainWindow::onConnected() {
@@ -159,9 +159,7 @@ void MainWindow::onTextChanged() {
     }
     qDebug () << commonPrefix << " " << commonSuffix;
     if(commonPrefix+commonSuffix == LastKnownText.length()){
-        // qDebug() << LastKnownText.length();
-        QString inserted = currentText.mid(LastKnownText.length()-commonSuffix,LastKnownText.length()-currentText.length());
-        // qDebug() << inserted;
+        QString inserted = currentText.mid(LastKnownText.length()-commonSuffix,1);
         string prev_id = "";
         int pos = LastKnownText.length()-commonSuffix;
         // qDebug() << currentText.length();
