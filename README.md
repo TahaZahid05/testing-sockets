@@ -1,4 +1,4 @@
-# Setup Guide  
+# Setup Guidey
 
 Follow this guide to install and run the **ChatApp** using **Qt** and **Python WebSockets**.  
 
