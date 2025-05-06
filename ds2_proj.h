@@ -378,16 +378,18 @@ public:
         nodes.clear();
         id_to_index.clear();
         version_vector.clear();
-        version_vector[clientId] = content.length();
+        version_vector[clientId] = content.empty() ? 0 : 1;
 
         string prev_id = "";
         for (size_t i = 0; i < content.size(); i++) {
             string id = string(1, clientId) + to_string(i+1);
             string val(1, content[i]);
-            RGA_Node newNode(id, val, version_vector, prev_id);
+            map<char, int> node_vv = version_vector;
+            RGA_Node newNode(id, val, node_vv, prev_id);
             nodes.push_back(newNode);
             id_to_index[id] = i;
             prev_id = id;
+            version_vector[clientId]++;
         }
     }
 

@@ -141,89 +141,135 @@ void MainWindow::onDisconnected() {
 }
 
 void MainWindow::onTextChanged() {
+    if (isRemoteChange) return;
 
-    // QString text = textEdit->toPlainText();
-    // if (webSocket.isValid() && !text.isEmpty()) {
-    //     webSocket.sendTextMessage(text);
-    //     qDebug() << "Sent:" << text;
-    // }
-    if (isRemoteChange) {
-        return; // Skip processing if change came from remote
-    }
     QString currentText = textEdit->toPlainText();
-    qDebug() << currentText;
-    qDebug() << LastKnownText;
-    int commonPrefix = 0;
-    while (commonPrefix < LastKnownText.length() &&
-           commonPrefix < currentText.length() &&
-           LastKnownText[commonPrefix] == currentText[commonPrefix]) {
-        qDebug() << LastKnownText[commonPrefix];
-        commonPrefix++;
-    }
-    int commonSuffix = 0;
-    while (commonSuffix < LastKnownText.length() - commonPrefix &&
-           commonSuffix < currentText.length() - commonPrefix &&
-           LastKnownText[LastKnownText.length() - 1 - commonSuffix] == currentText[currentText.length() - 1 - commonSuffix]) {
-        commonSuffix++;
-    }
-    qDebug () << commonPrefix << " " << commonSuffix;
-    if(commonPrefix+commonSuffix == LastKnownText.length()){
-        QString inserted = currentText.mid(LastKnownText.length()-commonSuffix,1);
-        string prev_id = "";
-        int pos = LastKnownText.length()-commonSuffix;
-        // qDebug() << currentText.length();
-        for (const auto& node: r1.getNodes()) {
-            if (!node.is_deleted){
-                if(r1.getNodeIndex(node) == pos-1) {
-                    prev_id = node.id;
-                    break;
-                }
-            }
-        }
-        // qDebug() << currentText.length();
+    qDebug() << "Current Text:" << currentText;
+    qDebug() << "Last Known Text:" << LastKnownText;
+
+    // Handle first character after file load or new file
+    if (LastKnownText.isEmpty() && !currentText.isEmpty()) {
         string id = clientId + to_string(charAdded);
-        string val = inserted.toStdString();
+        string val = currentText.toStdString();
         std::map<char, int> version_vector_pass = r1.getVersionVector();
-        // RGA_Node addNode(id,val,r1.getVersionVecotr(),prev_id);
-        r1.insert(id,val,version_vector_pass,prev_id);
+
+        // Insert first character
+        r1.insert(id, val, version_vector_pass, "");
+
         QJsonObject op;
         op["type"] = "insert";
         op["id"] = QString::fromStdString(id);
-        op["value"] = inserted;
-        op["prev_id"] = QString::fromStdString(prev_id);
+        op["value"] = currentText;
+        op["prev_id"] = "";
+
         map<char, int> temp_vector = r1.getNodeVersionVector(id);
         QJsonObject versionVec;
         for (const auto& [client, seq] : temp_vector) {
             versionVec[QString(client)] = seq;
         }
         op["version"] = versionVec;
-        qDebug() << op["value"];
-        allOperations.push_back(op);
-        // qDebug() << currentText.length();
-    }
-    else if(commonPrefix+commonSuffix == currentText.length()) {
-        // Get the deleted string segment (now handles strings instead of chars)
-        QString deletedStr = LastKnownText.mid(currentText.length()-commonSuffix, 1);
-        string deletedValue = deletedStr.toStdString();
-        int pos = currentText.length()-commonSuffix;
 
-        // Find and remove the corresponding node
-        for (const auto& node: r1.getNodes()) {
-            if(node.value == deletedValue && r1.getNodeIndex(node) == pos) {
-                QJsonObject op;
-                op["type"] = "delete";
-                op["id"] = QString::fromStdString(node.id);
-                allOperations.push_back(op);
-                r1.remove(node.id);
-                break;
+        qDebug() << "First character operation:" << op;
+        allOperations.push_back(op);
+
+        charAdded += 1;
+        LastKnownText = currentText;
+
+        // Send immediately without debouncing
+        debounceTimer.stop();
+        sendTextMessage();
+        return;
+    }
+
+    // Existing text diff logic for non-empty documents
+    if (currentText.isEmpty() || LastKnownText.isEmpty()) {
+        return;
+    }
+
+    int commonPrefix = 0;
+    while (commonPrefix < LastKnownText.length() &&
+           commonPrefix < currentText.length() &&
+           LastKnownText[commonPrefix] == currentText[commonPrefix]) {
+        commonPrefix++;
+    }
+
+    int commonSuffix = 0;
+    while (commonSuffix < LastKnownText.length() - commonPrefix &&
+           commonSuffix < currentText.length() - commonPrefix &&
+           LastKnownText[LastKnownText.length() - 1 - commonSuffix] ==
+               currentText[currentText.length() - 1 - commonSuffix]) {
+        commonSuffix++;
+    }
+
+    qDebug() << "Diff - Common Prefix:" << commonPrefix << "Common Suffix:" << commonSuffix;
+
+    if (commonPrefix + commonSuffix == LastKnownText.length()) {
+        // Insertion case
+        QString inserted = currentText.mid(commonPrefix, currentText.length() - commonPrefix - commonSuffix);
+        string prev_id = "";
+        int pos = commonPrefix;
+
+        if (pos > 0) {
+            for (const auto& node : r1.getNodes()) {
+                if (!node.is_deleted && r1.getNodeIndex(node) == pos - 1) {
+                    prev_id = node.id;
+                    break;
+                }
+            }
+        }
+
+        for (int i = 0; i < inserted.length(); i++) {
+            string id = clientId + to_string(charAdded + i);
+            string val(1, inserted.at(i).toLatin1());
+            std::map<char, int> version_vector_pass = r1.getVersionVector();
+
+            r1.insert(id, val, version_vector_pass, prev_id);
+
+            QJsonObject op;
+            op["type"] = "insert";
+            op["id"] = QString::fromStdString(id);
+            op["value"] = QString(val.c_str());
+            op["prev_id"] = QString::fromStdString(prev_id);
+
+            map<char, int> temp_vector = r1.getNodeVersionVector(id);
+            QJsonObject versionVec;
+            for (const auto& [client, seq] : temp_vector) {
+                versionVec[QString(client)] = seq;
+            }
+            op["version"] = versionVec;
+
+            allOperations.push_back(op);
+            prev_id = id;
+        }
+
+        charAdded += inserted.length();
+    }
+    else if (commonPrefix + commonSuffix == currentText.length()) {
+        // Deletion case
+        QString deleted = LastKnownText.mid(commonPrefix, LastKnownText.length() - commonPrefix - commonSuffix);
+
+        for (int i = 0; i < deleted.length(); i++) {
+            int pos = commonPrefix;
+            for (const auto& node : r1.getNodes()) {
+                if (!node.is_deleted && node.value == deleted.mid(i, 1).toStdString() &&
+                    r1.getNodeIndex(node) == pos) {
+                    QJsonObject op;
+                    op["type"] = "delete";
+                    op["id"] = QString::fromStdString(node.id);
+                    allOperations.push_back(op);
+                    r1.remove(node.id);
+                    break;
+                }
             }
         }
     }
-    charAdded += 1;
+
     LastKnownText = currentText;
     r1.print_document();
-    debounceTimer.start(3000);
 
+    // Restart debounce timer
+    debounceTimer.stop();
+    debounceTimer.start(3000);
 }
 
 void MainWindow::sendTextMessage() {
@@ -507,37 +553,42 @@ void MainWindow::handleFileMessage(const QJsonObject &obj) {
     QString type = obj["type"].toString();
 
     if (type == "file_content") {
-        // Start atomic update
         isRemoteChange = true;
         disconnect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
 
         QString content = obj["content"].toString();
         QString filename = obj["filename"].toString();
 
-        // Reset and initialize RGA state
+        // Reset state
         if (obj.contains("crdt_state")) {
-            try {
-                r1.deserializeState(obj["crdt_state"].toString().toStdString());
-                charAdded = obj["char_added"].toInt();
-            } catch (const std::exception& e) {
-                qWarning() << "Deserialization failed:" << e.what();
-                r1.initializeFromContent(content.toStdString(), clientId);
-                charAdded = content.length();
+            r1.deserializeState(obj["crdt_state"].toString().toStdString());
+            // Get the maximum sequence number for our client
+            charAdded = 0;
+            for (const auto& node : r1.getNodes()) {
+                if (node.id[0] == clientId) {
+                    int currentSeq = stoi(node.id.substr(1));
+                    charAdded = max(charAdded, currentSeq);
+                }
             }
+            charAdded++; // Next available sequence number
         } else {
             r1.initializeFromContent(content.toStdString(), clientId);
-            charAdded = content.length();
+            charAdded = content.length() + 1;
         }
 
-        // Update UI
         textEdit->setPlainText(content);
         LastKnownText = content;
         currentServerFile = filename;
 
-        // End atomic update
+        // Force an initial sync message
+        QTimer::singleShot(100, this, [this]() {
+            if (!textEdit->toPlainText().isEmpty()) {
+                onTextChanged();
+            }
+        });
+
         connect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
         isRemoteChange = false;
-
     } else if (type == "file_list") {
         QJsonArray filesArray = obj["files"].toArray();
         QStringList fileNames;
