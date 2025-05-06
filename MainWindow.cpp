@@ -230,7 +230,7 @@ void MainWindow::sendTextMessage() {
         }
         if (webSocket.isValid()) {
             webSocket.sendTextMessage(QJsonDocument(obj).toJson());
-            webSocket.
+            // webSocket.
         }
     }
     allOperations.clear();
