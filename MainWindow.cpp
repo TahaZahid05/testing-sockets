@@ -8,7 +8,7 @@
 
 //TO-DO: ADD AUTO-GENERATED ID
     MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), currentFile(""), clientId('A'), LastKnownText(""), charAdded(0)
+    : QMainWindow(parent), currentFile(""), clientId('?'), LastKnownText(""), charAdded(0)
 {
     // Create central text edit
     textEdit = new QTextEdit(this);
@@ -74,61 +74,68 @@ void MainWindow::onConnected() {
 
 void MainWindow::onMessageReceived(QString message) {
     qDebug() << "Received message:" << message;
-    QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8());
-    if (doc.isObject()) {
-        QJsonObject obj = doc.object();
-        QString type = obj["type"].toString();
 
-        isRemoteChange = true; // Mark as remote change
-
-        if (type == "insert") {
-            string id = obj["id"].toString().toStdString();
-            if (r1.search(id) == std::nullopt){
-                string value = obj["value"].toString().toStdString();
-                string prev_id = obj["prev_id"].toString().toStdString();
-                QJsonObject vvJson = obj["version"].toObject();
-                map<char, int> node_version_vector;
-                for (const auto& key : vvJson.keys()) {
-                    char client = key[0].toLatin1();
-                    int seq = vvJson[key].toInt();
-                    node_version_vector[client] = seq;
-                }
-
-                // RGA remoteOp;
-                // remoteOp.insert(id, value, prev_id);
-                // qDebug() << remoteOp.print_document();
-                // RGA_Node& newNode = remoteOp.getNodes().back();
-                // newNode.version_vector = node_version_vector;
-                RGA_Node newNode(id, value, node_version_vector, prev_id);
-
-                r1.merge(newNode);
-                // qDebug() << "yes";
-            }
+    // Check if message is from server (not JSON)
+    if (message.startsWith("[Server] You are Client ID: ")) {
+        QString idStr = message.section(':', -1).trimmed();
+        if (!idStr.isEmpty() && idStr.length() == 1) {
+            clientId = idStr[0].toLatin1();  // Assign client ID
+            qDebug() << "Assigned client ID:" << clientId;
         }
-        else if (type == "delete") {
-            string id = obj["id"].toString().toStdString();
-            r1.remove(id);
-        }
-
-        // Preserve cursor position during remote updates
-        int oldCursorPos = textEdit->textCursor().position();
-        QString newText = QString::fromStdString(r1.print_document());
-
-        disconnect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
-        textEdit->setPlainText(newText);
-
-        // Restore cursor to original position
-        QTextCursor cursor = textEdit->textCursor();
-        cursor.setPosition(std::min<int>(oldCursorPos, static_cast<int>(newText.length())));
-
-        textEdit->setTextCursor(cursor);
-
-        LastKnownText = textEdit->toPlainText();
-        connect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
-
-        isRemoteChange = false; // Reset flag
+        return;
     }
+
+    // Assume remaining messages are JSON-formatted
+    QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8());
+    if (!doc.isObject()) {
+        qWarning() << "Invalid JSON message received";
+        return;
+    }
+
+    QJsonObject obj = doc.object();
+    QString type = obj["type"].toString();
+
+    isRemoteChange = true; // Mark as remote change
+
+    if (type == "insert") {
+        string id = obj["id"].toString().toStdString();
+        if (r1.search(id) == std::nullopt) {
+            string value = obj["value"].toString().toStdString();
+            string prev_id = obj["prev_id"].toString().toStdString();
+            QJsonObject vvJson = obj["version"].toObject();
+            map<char, int> node_version_vector;
+            for (const auto& key : vvJson.keys()) {
+                char client = key[0].toLatin1();
+                int seq = vvJson[key].toInt();
+                node_version_vector[client] = seq;
+            }
+
+            RGA_Node newNode(id, value, node_version_vector, prev_id);
+            r1.merge(newNode);
+        }
+    }
+    else if (type == "delete") {
+        string id = obj["id"].toString().toStdString();
+        r1.remove(id);
+    }
+
+    // Preserve cursor position during remote updates
+    int oldCursorPos = textEdit->textCursor().position();
+    QString newText = QString::fromStdString(r1.print_document());
+
+    disconnect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
+    textEdit->setPlainText(newText);
+
+    QTextCursor cursor = textEdit->textCursor();
+    cursor.setPosition(std::min<int>(oldCursorPos, static_cast<int>(newText.length())));
+    textEdit->setTextCursor(cursor);
+
+    LastKnownText = textEdit->toPlainText();
+    connect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
+
+    isRemoteChange = false;
 }
+
 
 
 void MainWindow::onDisconnected() {
