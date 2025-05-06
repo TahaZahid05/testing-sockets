@@ -73,14 +73,18 @@
 }
 
 void MainWindow::onPingReceived(quint64 elapsedTime, const QByteArray &payload) {
-    qDebug() << "yay";
+    if (!isConnected) {
+        isConnected = true;
+        sendTextMessage();
+    }
+    // qDebug() << "yay";
     pongReceived = true;
-    isConnected = true;
+    // isConnected = true;
 }
 
 void MainWindow::checkDisconnect() {
     if (!pongReceived) {
-        qDebug() << "yes";
+        // qDebug() << "yes";
         isConnected = false;
     }
     pongReceived = false;
