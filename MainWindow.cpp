@@ -164,7 +164,7 @@ void MainWindow::onPingReceived(quint64 elapsedTime, const QByteArray &payload) 
     }
     // qDebug() << "yay";
     pongReceived = true;
-    // isConnected = true;
+    isConnected = true;
 }
 
 void MainWindow::checkDisconnect() {
@@ -374,13 +374,14 @@ void MainWindow::onAlignRight() { textEdit->setAlignment(Qt::AlignRight); }
 void MainWindow::onConnect() {
     // QMessageBox::information(this, "Connect", "Connect clicked");
     statusBar()->showMessage("Connected", 3000);
+    webSocket.open(QUrl("ws://192.168.0.34:12345"));
     connect(&webSocket, &QWebSocket::connected, this, [this]() {
         isConnected = true;
         qDebug() << "Reconnected successfully!";
         sendTextMessage();  // Safe to send now
     });
 
-    webSocket.open(QUrl("ws://192.168.0.34:12345"));
+
 }
 void MainWindow::onSave() {
     QString file = QFileDialog::getSaveFileName(this, "Save File");
