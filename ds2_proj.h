@@ -181,7 +181,7 @@ public:
                 return &node;
             }
         }
-        throw std::runtime_error("Node not found: " + idPass);
+        return nullptr;
     }
 
     // Search for a character by its ID

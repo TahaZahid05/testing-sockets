@@ -111,8 +111,8 @@
     setWindowTitle("Text Editor");
     resize(800, 600);
 
-    webSocket.open(QUrl("ws://192.168.0.34:12345"));
-    // webSocket.open(QUrl("wss://a416-111-88-46-136.ngrok-free.app"));
+    // webSocket.open(QUrl("ws://192.168.0.34:12345"));
+    webSocket.open(QUrl("wss://b20b-111-88-46-136.ngrok-free.app"));
     connect(textEdit, &QTextEdit::cursorPositionChanged, [=]() {
         QTextCharFormat fmt = textEdit->currentCharFormat();
         btnBold->setChecked(fmt.fontWeight() == QFont::Bold);
@@ -174,7 +174,7 @@ void MainWindow::onMessageReceived(QString message) {
 
     if (type == "insert") {
         string id = obj["id"].toString().toStdString();
-        if (r1.search(id) == std::nullopt) {
+        if (r1.searchNode(id) == nullptr) {
             string value = obj["value"].toString().toStdString();
             string prev_id = obj["prev_id"].toString().toStdString();
             QJsonObject vvJson = obj["version"].toObject();
@@ -191,7 +191,10 @@ void MainWindow::onMessageReceived(QString message) {
     }
     else if (type == "delete") {
         string id = obj["id"].toString().toStdString();
-        r1.remove(id);
+        if(r1.searchNode(id) != nullptr && !(r1.searchNode(id)->is_deleted)){
+            string id = obj["id"].toString().toStdString();
+            r1.remove(id);
+        }
     }
 
     int oldCursorPos = textEdit->textCursor().position();
@@ -335,8 +338,8 @@ void MainWindow::onConnect() {
     webSocket.abort();  
     QCoreApplication::processEvents(); 
     QTimer::singleShot(100, [this]() {
-        webSocket.open(QUrl("ws://192.168.0.34:12345"));
-        // webSocket.open(QUrl("wss://a416-111-88-46-136.ngrok-free.app"));
+        // webSocket.open(QUrl("ws://192.168.0.34:12345"));
+        webSocket.open(QUrl("wss://b20b-111-88-46-136.ngrok-free.app"));
         statusBar()->showMessage("Reconnecting...");
     });
     connect(&webSocket, &QWebSocket::connected, this, [this]() {
