@@ -111,8 +111,8 @@
     setWindowTitle("Text Editor");
     resize(800, 600);
 
-    // webSocket.open(QUrl("ws://192.168.0.34:12345"));
-    webSocket.open(QUrl("wss://b20b-111-88-46-136.ngrok-free.app"));
+    webSocket.open(QUrl("ws://192.168.0.34:12345"));
+    // webSocket.open(QUrl("wss://b20b-111-88-46-136.ngrok-free.app"));
     connect(textEdit, &QTextEdit::cursorPositionChanged, [=]() {
         QTextCharFormat fmt = textEdit->currentCharFormat();
         btnBold->setChecked(fmt.fontWeight() == QFont::Bold);
@@ -219,30 +219,35 @@ void MainWindow::onDisconnected() {
 }
 
 void MainWindow::onTextChanged() {
-    if (isRemoteChange) {
-        return; 
-    }
+    //cursorPos in insert: pos-1
+    //cursPos in delete = pos
+    int cursorPos = textEdit->textCursor().position();
+    qDebug() << cursorPos << "yay";
     QString currentText = textEdit->toPlainText();
+    if (isRemoteChange || currentText.length() == LastKnownText.length()) {
+        return;
+    }
+    qDebug() << currentText.toUtf8();
     qDebug() << currentText;
     qDebug() << LastKnownText;
-    int commonPrefix = 0;
-    while (commonPrefix < LastKnownText.length() &&
-           commonPrefix < currentText.length() &&
-           LastKnownText[commonPrefix] == currentText[commonPrefix]) {
-        qDebug() << LastKnownText[commonPrefix];
-        commonPrefix++;
-    }
-    int commonSuffix = 0;
-    while (commonSuffix < LastKnownText.length() - commonPrefix &&
-           commonSuffix < currentText.length() - commonPrefix &&
-           LastKnownText[LastKnownText.length() - 1 - commonSuffix] == currentText[currentText.length() - 1 - commonSuffix]) {
-        commonSuffix++;
-    }
+    // int commonPrefix = 0;
+    // while (commonPrefix < LastKnownText.length() &&
+    //        commonPrefix < currentText.length() &&
+    //        LastKnownText[commonPrefix] == currentText[commonPrefix]) {
+    //     qDebug() << LastKnownText[commonPrefix];
+    //     commonPrefix++;
+    // }
+    // int commonSuffix = 0;
+    // while (commonSuffix < LastKnownText.length() - commonPrefix &&
+    //        commonSuffix < currentText.length() - commonPrefix &&
+    //        LastKnownText[LastKnownText.length() - 1 - commonSuffix] == currentText[currentText.length() - 1 - commonSuffix]) {
+    //     commonSuffix++;
+    // }
     qDebug () << commonPrefix << " " << commonSuffix;
-    if(commonPrefix+commonSuffix == LastKnownText.length()){
-        QString inserted = currentText.mid(LastKnownText.length()-commonSuffix,1);
+    if(currentText.length() == LastKnownText.length()){
+        QString inserted = currentText[cursorPos-1];
         string prev_id = "";
-        int pos = LastKnownText.length()-commonSuffix;
+        int pos = cursorPos-1;
         for (const auto& node: r1.getNodes()) {
             if (!node.is_deleted){
                 if(r1.getNodeIndex(node) == pos-1) {
@@ -267,12 +272,13 @@ void MainWindow::onTextChanged() {
         }
         op["version"] = versionVec;
         qDebug() << op["value"];
+        charAdded += 1;
         allOperations.push_back(op);
     }
-    else if(commonPrefix+commonSuffix == currentText.length()) {
-        QString deletedStr = LastKnownText.mid(currentText.length()-commonSuffix, 1);
+    else if(LastKnownText.length() > currentText.length()) {
+        QString deletedStr = LastKnownText[cursorPos];
         string deletedValue = deletedStr.toStdString();
-        int pos = currentText.length()-commonSuffix;
+        int pos = cursorPos;
 
         for (const auto& node: r1.getNodes()) {
             if(node.value == deletedValue && r1.getNodeIndex(node) == pos) {
@@ -285,9 +291,8 @@ void MainWindow::onTextChanged() {
             }
         }
     }
-    charAdded += 1;
     LastKnownText = currentText;
-    r1.print_document();
+    qDebug() << r1.print_document();
     debounceTimer.start(3000);
 }
 
@@ -338,8 +343,8 @@ void MainWindow::onConnect() {
     webSocket.abort();  
     QCoreApplication::processEvents(); 
     QTimer::singleShot(100, [this]() {
-        // webSocket.open(QUrl("ws://192.168.0.34:12345"));
-        webSocket.open(QUrl("wss://b20b-111-88-46-136.ngrok-free.app"));
+        webSocket.open(QUrl("ws://192.168.0.34:12345"));
+        // webSocket.open(QUrl("wss://b20b-111-88-46-136.ngrok-free.app"));
         statusBar()->showMessage("Reconnecting...");
     });
     connect(&webSocket, &QWebSocket::connected, this, [this]() {
@@ -436,6 +441,11 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
     if (obj == textEdit && event->type() == QEvent::KeyPress) {
         qDebug() << "Key press event received";
+        // auto *keyEvent = static_cast<QKeyEvent*>(event);
+        // // 1) Capture the key:
+        // QString ch = keyEvent->text();
+        // int cursorPos = textEdit->textCursor().position();
+        // qDebug() << cursorPos << "yay";
     }
     return QMainWindow::eventFilter(obj, event);
 }

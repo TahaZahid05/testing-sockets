@@ -140,6 +140,7 @@ public:
     // Delete a character by marking it as deleted (tombstone)
     void remove(const std::string& id) {
         if (id_to_index.find(id) != id_to_index.end()) {
+            version_vector[id[0]]++;
             size_t index = id_to_index[id];
             RGA_Node* deletedNode = searchNode(id);
             for (auto& node: nodes) {
