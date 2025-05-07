@@ -171,6 +171,7 @@ void MainWindow::checkDisconnect() {
     if (!pongReceived) {
         // qDebug() << "yes";
         isConnected = false;
+        statusBar()->showMessage("Disconnected");
     }
     pongReceived = false;
     webSocket.ping();
