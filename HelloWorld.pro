@@ -1,4 +1,5 @@
 QT += widgets
+QT += printsupport
 TARGET = TextEditor
 TEMPLATE = app
 
@@ -17,3 +18,6 @@ CONFIG += c++17
 
 # Include Qt WebSockets module
 QT += websockets
+
+RESOURCES += \
+    resources.qrc
