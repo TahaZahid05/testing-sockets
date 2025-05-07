@@ -95,7 +95,7 @@
     debounceTimer.setSingleShot(true);
 
     pongReceived = false;
-    currentTimer.setInterval(500);
+    currentTimer.setInterval(5000);
     connect(&currentTimer, &QTimer::timeout, this, &MainWindow::checkDisconnect);
     connect(&webSocket, &QWebSocket::pong, this, &MainWindow::onPingReceived);
     currentTimer.start();
@@ -111,8 +111,8 @@
     setWindowTitle("Text Editor");
     resize(800, 600);
 
-    webSocket.open(QUrl("ws://192.168.0.34:12345"));
-    // webSocket.open(QUrl("wss://46b9-103-125-241-66.ngrok-free.app"));
+    // webSocket.open(QUrl("ws://192.168.0.34:12345"));
+    webSocket.open(QUrl("wss://a416-111-88-46-136.ngrok-free.app"));
     connect(textEdit, &QTextEdit::cursorPositionChanged, [=]() {
         QTextCharFormat fmt = textEdit->currentCharFormat();
         btnBold->setChecked(fmt.fontWeight() == QFont::Bold);
@@ -335,8 +335,8 @@ void MainWindow::onConnect() {
     webSocket.abort();  
     QCoreApplication::processEvents(); 
     QTimer::singleShot(100, [this]() {
-        webSocket.open(QUrl("ws://192.168.0.34:12345"));
-        // webSocket.open(QUrl("wss://46b9-103-125-241-66.ngrok-free.app"));
+        // webSocket.open(QUrl("ws://192.168.0.34:12345"));
+        webSocket.open(QUrl("wss://a416-111-88-46-136.ngrok-free.app"));
         statusBar()->showMessage("Reconnecting...");
     });
     connect(&webSocket, &QWebSocket::connected, this, [this]() {
