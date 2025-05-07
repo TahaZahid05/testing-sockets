@@ -68,16 +68,6 @@
     alignGroup->addButton(btnAlignRight);
 
     textEdit = new QTextEdit;
-    // textEdit->setStyleSheet(
-    //     "QTextEdit {"
-    //     "  font-family: 'Consolas', monospace;"
-    //     "  font-size: 12pt;"
-    //     "  background-color: #f8f8f8;"
-    //     "  color: black;"
-    //     "  border: 1px solid #ddd;"
-    //     "  padding: 10px;"
-    //     "}"
-    //     );
         
     mainLayout->addWidget(toolbar);
     mainLayout->addWidget(textEdit);
@@ -110,18 +100,6 @@
     connect(&webSocket, &QWebSocket::pong, this, &MainWindow::onPingReceived);
     currentTimer.start();
 
-    // Send message on Enter key (like a chat app)
-    // connect(textEdit, &QTextEdit::textChanged, [this]() {
-    //     if (textEdit->toPlainText().endsWith("\n")) {
-    //         QString msg = textEdit->toPlainText().trimmed();
-    //         if (!msg.isEmpty()) {
-    //             webSocket.sendTextMessage(msg);
-    //             textEdit->append("[You] " + msg);
-    //             // textEdit->clear();
-    //         }
-    //     }
-    // });
-
     textEdit->setFocus();
     textEdit->installEventFilter(this);
     textEdit->setReadOnly(false);
@@ -133,13 +111,8 @@
     setWindowTitle("Text Editor");
     resize(800, 600);
 
-// <<<<<<< fixed-delete
-//     webSocket.open(QUrl("ws://192.168.0.34:12345"));
-// =======
     webSocket.open(QUrl("ws://192.168.0.34:12345"));
-// >>>>>>> main
     // webSocket.open(QUrl("wss://46b9-103-125-241-66.ngrok-free.app"));
-    // webSocket.open(QUrl("wss://f023-111-88-45-254.ngrok-free.app"));  // Use "wss://" for secure WebSockets
     connect(textEdit, &QTextEdit::cursorPositionChanged, [=]() {
         QTextCharFormat fmt = textEdit->currentCharFormat();
         btnBold->setChecked(fmt.fontWeight() == QFont::Bold);
@@ -322,7 +295,6 @@ void MainWindow::sendTextMessage() {
         }
         if (isConnected) {
             webSocket.sendTextMessage(QJsonDocument(obj).toJson());
-            // webSocket.
         }
     }
     if(isConnected) {
@@ -360,11 +332,11 @@ void MainWindow::onAlignCenter() { textEdit->setAlignment(Qt::AlignCenter); }
 void MainWindow::onAlignRight() { textEdit->setAlignment(Qt::AlignRight); }
 
 void MainWindow::onConnect() {
-    // QMessageBox::information(this, "Connect", "Connect clicked");
     webSocket.abort();  
     QCoreApplication::processEvents(); 
     QTimer::singleShot(100, [this]() {
-        webSocket.open(QUrl("ws://192.168.0.34:12345")); 
+        webSocket.open(QUrl("ws://192.168.0.34:12345"));
+        // webSocket.open(QUrl("wss://46b9-103-125-241-66.ngrok-free.app"));
         statusBar()->showMessage("Reconnecting...");
     });
     connect(&webSocket, &QWebSocket::connected, this, [this]() {
@@ -418,20 +390,7 @@ void MainWindow::createActions()
     aboutAct = new QAction("&About", this);
     aboutAct->setStatusTip("Show the application's About box");
     connect(aboutAct, &QAction::triggered, this, &MainWindow::about);
-
-    // reconnectAct = new QAction("Reconnect", this);
-    // reconnectAct->setStatusTip("Reconnect with the server");
-    // connect(reconnectAct, &QAction::triggered, this, &MainWindow::reconnect);
 }
-
-// void MainWindow::reconnect()
-// {
-//     // webSocket.open(QUrl("ws://192.168.0.34:12345"));
-//     // isConnected = true;
-//     // sendTextMessage();
-
-
-// }
 
 void MainWindow::createMenus()
 {
@@ -469,15 +428,6 @@ void MainWindow::openFile()
             loadFile(fileName);
     }
 }
-
-// bool MainWindow::saveFile()
-// {
-//     if (currentFile.isEmpty()) {
-//         return saveAsFile();
-//     } else {
-//         return saveFile(currentFile);
-//     }
-// }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
@@ -567,26 +517,6 @@ void MainWindow::loadFile(const QString &fileName)
     setCurrentFile(fileName);
     statusBar()->showMessage("File loaded", 2000);
 }
-
-// bool MainWindow::saveFile(const QString &fileName)
-// {
-//     QFile file(fileName);
-//     if (!file.open(QFile::WriteOnly | QFile::Text)) {
-//         QMessageBox::warning(this, "Text Editor",
-//                              QString("Cannot write file %1:\n%2.")
-//                                  .arg(QDir::toNativeSeparators(fileName), file.errorString()));
-//         return false;
-//     }
-
-//     QTextStream out(&file);
-//     QApplication::setOverrideCursor(Qt::WaitCursor);
-//     out << textEdit->toPlainText();
-//     QApplication::restoreOverrideCursor();
-
-//     setCurrentFile(fileName);
-//     statusBar()->showMessage("File saved", 2000);
-//     return true;
-// }
 
 void MainWindow::setCurrentFile(const QString &fileName)
 {

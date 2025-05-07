@@ -48,7 +48,6 @@ private slots:
     void openFile();
     bool saveAsFile();
     void about();
-    // void reconnect();
 
     void onConnected();
     void onMessageReceived(QString message);
