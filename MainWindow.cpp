@@ -163,6 +163,7 @@
 void MainWindow::onPingReceived(quint64 elapsedTime, const QByteArray &payload) {
     if (!isConnected) {
         isConnected = true;
+        statusBar()->showMessage("Connected");
         sendTextMessage();
     }
     // qDebug() << "yay";
@@ -256,7 +257,6 @@ void MainWindow::onMessageReceived(QString message) {
         else if (type == "file_content" || type == "file_list") {
             handleFileMessage(obj);
         }
-    }
 }
 
 
@@ -360,6 +360,7 @@ void MainWindow::onTextChanged() {
         op["version"] = versionVec;
         qDebug() << op["value"];
         allOperations.push_back(op);
+        charAdded += 1;
     }
     else if(commonPrefix+commonSuffix == currentText.length()) {
         QString deletedStr = LastKnownText.mid(currentText.length()-commonSuffix, 1);
