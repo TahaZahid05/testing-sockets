@@ -130,10 +130,12 @@ public:
 
         // Update indices for subsequent nodes
         for (size_t i = index + 1; i < nodes.size(); ++i) {
-            if (nodes[i].prev_id == prev_id){
+            if (nodes[i].prev_id == prev_id && !nodes[i].is_deleted){
                 nodes[i].prev_id = new_node.id;
             }
-            id_to_index[nodes[i].id] = i;
+            if(!nodes[i].is_deleted){
+                id_to_index[nodes[i].id] = id_to_index[nodes[i].id] + 1;
+            }
         }
     }
 
@@ -142,6 +144,7 @@ public:
         if (id_to_index.find(id) != id_to_index.end()) {
             version_vector[id[0]]++;
             size_t index = id_to_index[id];
+            id_to_index[id] = -1;
             RGA_Node* deletedNode = searchNode(id);
             for (auto& node: nodes) {
                 if (node.id != id && !node.is_deleted) {
@@ -171,6 +174,7 @@ public:
                     }
                 }
             }
+            // id
             deletedNode->is_deleted = true;
         }
 

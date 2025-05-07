@@ -208,6 +208,7 @@ void MainWindow::onMessageReceived(QString message) {
     textEdit->setTextCursor(cursor);
 
     LastKnownText = textEdit->toPlainText();
+    qDebug() << LastKnownText << "hehe";
     connect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
 
     isRemoteChange = false;
@@ -243,7 +244,7 @@ void MainWindow::onTextChanged() {
     //        LastKnownText[LastKnownText.length() - 1 - commonSuffix] == currentText[currentText.length() - 1 - commonSuffix]) {
     //     commonSuffix++;
     // }
-    if(currentText.length() == LastKnownText.length()){
+    if(currentText.length() > LastKnownText.length()){
         QString inserted = currentText[cursorPos-1];
         string prev_id = "";
         int pos = cursorPos-1;
@@ -278,8 +279,11 @@ void MainWindow::onTextChanged() {
         QString deletedStr = LastKnownText[cursorPos];
         string deletedValue = deletedStr.toStdString();
         int pos = cursorPos;
-
+        qDebug() << deletedStr;
+        qDebug() << deletedValue;
+        qDebug() << pos;
         for (const auto& node: r1.getNodes()) {
+            qDebug() << node.value << " " << r1.getNodeIndex(node);
             if(node.value == deletedValue && r1.getNodeIndex(node) == pos) {
                 QJsonObject op;
                 op["type"] = "delete";
