@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>icons/rotate-ccw.svg</file>
+        <file>icons/rotate-cw.svg</file>
+        <file>icons/printer.svg</file>
+        <file>icons/bold.svg</file>
+        <file>icons/italic.svg</file>
+        <file>icons/align-right.svg</file>
+        <file>icons/align-left.svg</file>
+        <file>icons/align-justify.svg</file>
+        <file>icons/align-center.svg</file>
+        <file>icons/underline.svg</file>
+    </qresource>
+</RCC>
