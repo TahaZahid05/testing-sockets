@@ -12,7 +12,6 @@ release/
 
 # Ignore Qt-specific generated files
 *.moc
-*.qrc
 *.qmake.stash
 Makefile
 Makefile.Debug
