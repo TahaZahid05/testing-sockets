@@ -19,6 +19,17 @@
 #include <QTimer>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QToolButton>
+#include <QPushButton>
+#include <QToolBar>
+#include <QButtonGroup>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QTextCharFormat>
+#include <QFont>
+#include <QTextCursor>
+#include <QPrinter>
+#include <QPrintDialog>
 
 class MainWindow : public QMainWindow
 {
@@ -33,12 +44,14 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 private slots:
+    // File operations
     void newFile();
     void openFile();
     bool saveAsFile();
     void about();
-    void reconnect();
+    // void reconnect();
 
+    // WebSocket operations
     void onConnected();
     void onMessageReceived(QString message);
     void onDisconnected();
@@ -48,6 +61,18 @@ private slots:
     void onPingReceived(quint64 elapsedTime, const QByteArray &payload);
 
     void checkDisconnect();
+    // Formatting operations
+    void onUndo();
+    void onRedo();
+    void onPrint();
+    void onBold();
+    void onItalic();
+    void onUnderline();
+    void onAlignLeft();
+    void onAlignCenter();
+    void onAlignRight();
+    void onSave();
+    void onConnect();
 
 private:
 
@@ -59,6 +84,8 @@ private:
     // UI Components
     bool isRemoteChange = false;
     QTextEdit *textEdit;
+    QToolButton *btnBold, *btnItalic, *btnUnderline;
+    QToolButton *btnAlignLeft, *btnAlignCenter, *btnAlignRight;
 
     // File handling
     QString currentFile;
