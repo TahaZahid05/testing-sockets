@@ -111,10 +111,7 @@ public:
 
                 }
             }
-            // cout << "Finally" << endl;
-            // cout << new_node.id << new_node.prev_id << endl;
             index = id_to_index[prev_id] + 1;
-            // cout << index << endl;
         }
         else {
             for (const auto& node: nodes){

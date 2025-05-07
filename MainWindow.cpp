@@ -208,7 +208,6 @@ void MainWindow::onMessageReceived(QString message) {
     textEdit->setTextCursor(cursor);
 
     LastKnownText = textEdit->toPlainText();
-    qDebug() << LastKnownText << "hehe";
     connect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
 
     isRemoteChange = false;
@@ -223,27 +222,10 @@ void MainWindow::onTextChanged() {
     //cursorPos in insert: pos-1
     //cursPos in delete = pos
     int cursorPos = textEdit->textCursor().position();
-    qDebug() << cursorPos << "yay";
     QString currentText = textEdit->toPlainText();
     if (isRemoteChange || currentText.length() == LastKnownText.length()) {
         return;
     }
-    qDebug() << currentText.toUtf8();
-    qDebug() << currentText;
-    qDebug() << LastKnownText;
-    // int commonPrefix = 0;
-    // while (commonPrefix < LastKnownText.length() &&
-    //        commonPrefix < currentText.length() &&
-    //        LastKnownText[commonPrefix] == currentText[commonPrefix]) {
-    //     qDebug() << LastKnownText[commonPrefix];
-    //     commonPrefix++;
-    // }
-    // int commonSuffix = 0;
-    // while (commonSuffix < LastKnownText.length() - commonPrefix &&
-    //        commonSuffix < currentText.length() - commonPrefix &&
-    //        LastKnownText[LastKnownText.length() - 1 - commonSuffix] == currentText[currentText.length() - 1 - commonSuffix]) {
-    //     commonSuffix++;
-    // }
     if(currentText.length() > LastKnownText.length()){
         QString inserted = currentText[cursorPos-1];
         string prev_id = "";
@@ -271,7 +253,6 @@ void MainWindow::onTextChanged() {
             versionVec[QString(client)] = seq;
         }
         op["version"] = versionVec;
-        qDebug() << op["value"];
         charAdded += 1;
         allOperations.push_back(op);
     }
@@ -279,11 +260,7 @@ void MainWindow::onTextChanged() {
         QString deletedStr = LastKnownText[cursorPos];
         string deletedValue = deletedStr.toStdString();
         int pos = cursorPos;
-        qDebug() << deletedStr;
-        qDebug() << deletedValue;
-        qDebug() << pos;
         for (const auto& node: r1.getNodes()) {
-            qDebug() << node.value << " " << r1.getNodeIndex(node);
             if(node.value == deletedValue && r1.getNodeIndex(node) == pos) {
                 QJsonObject op;
                 op["type"] = "delete";
@@ -295,7 +272,6 @@ void MainWindow::onTextChanged() {
         }
     }
     LastKnownText = currentText;
-    qDebug() << r1.print_document();
     debounceTimer.start(3000);
 }
 
@@ -352,7 +328,6 @@ void MainWindow::onConnect() {
     });
     connect(&webSocket, &QWebSocket::connected, this, [this]() {
         isConnected = true;
-        qDebug() << "Reconnected successfully!";
         statusBar()->showMessage("Connected");
         sendTextMessage();
     });
@@ -383,11 +358,6 @@ void MainWindow::createActions()
     openAct->setStatusTip("Open an existing file");
     connect(openAct, &QAction::triggered, this, &MainWindow::openFile);
 
-    // saveAct = new QAction("&Save", this);
-    // saveAct->setShortcut(QKeySequence::Save);
-    // saveAct->setStatusTip("Save the document to disk");
-    // connect(saveAct, &QAction::triggered, this, &MainWindow::saveAsFile);  
-
     saveAsAct = new QAction("Save &As...", this);
     saveAsAct->setShortcut(QKeySequence::SaveAs);
     saveAsAct->setStatusTip("Save the document under a new name");
@@ -415,7 +385,6 @@ void MainWindow::createMenus()
 
     QMenu *helpMenu = menuBar()->addMenu("&Help");
     helpMenu->addAction(aboutAct);
-    // helpMenu->addAction(reconnectAct);
 }
 
 void MainWindow::createStatusBar()
@@ -444,11 +413,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
     if (obj == textEdit && event->type() == QEvent::KeyPress) {
         qDebug() << "Key press event received";
-        // auto *keyEvent = static_cast<QKeyEvent*>(event);
-        // // 1) Capture the key:
-        // QString ch = keyEvent->text();
-        // int cursorPos = textEdit->textCursor().position();
-        // qDebug() << cursorPos << "yay";
     }
     return QMainWindow::eventFilter(obj, event);
 }
