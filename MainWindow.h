@@ -44,14 +44,12 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 private slots:
-    // File operations
     void newFile();
     void openFile();
     bool saveAsFile();
     void about();
     // void reconnect();
 
-    // WebSocket operations
     void onConnected();
     void onMessageReceived(QString message);
     void onDisconnected();
@@ -61,7 +59,6 @@ private slots:
     void onPingReceived(quint64 elapsedTime, const QByteArray &payload);
 
     void checkDisconnect();
-    // Formatting operations
     void onUndo();
     void onRedo();
     void onPrint();
@@ -76,22 +73,18 @@ private slots:
 
 private:
 
-    //Disconnected check
     QTimer currentTimer;
     bool pongReceived = false;
     bool isConnected = true;
 
-    // UI Components
     bool isRemoteChange = false;
     QTextEdit *textEdit;
     QToolButton *btnBold, *btnItalic, *btnUnderline;
     QToolButton *btnAlignLeft, *btnAlignCenter, *btnAlignRight;
 
-    // File handling
     QString currentFile;
     QWebSocket webSocket;
 
-    // Actions
     QAction *newAct;
     QAction *openAct;
     QAction *saveAct;
@@ -111,7 +104,6 @@ private:
     void setCurrentFile(const QString &fileName);
     QString strippedName(const QString &fullFileName);
 
-    // RGA related
     RGA r1;
     int charAdded;
     char clientId;
@@ -119,4 +111,4 @@ private:
     vector<QJsonObject> allOperations;
 };
 
-#endif // MAINWINDOW_H
+#endif 
