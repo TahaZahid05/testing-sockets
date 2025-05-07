@@ -180,7 +180,7 @@ void MainWindow::onConnected() {
     // textEdit->append("[System] Connected to chat server!");
     webSocket.ping();
     currentTimer.start();
-    statusBar()->showMessage("Connected", 3000);
+    statusBar()->showMessage("Connected");
     isConnected = true;
 }
 
@@ -250,7 +250,7 @@ void MainWindow::onMessageReceived(QString message) {
 
 
 void MainWindow::onDisconnected() {
-    statusBar()->showMessage("Disconnected", 3000);
+    statusBar()->showMessage("Disconnected");
 }
 
 void MainWindow::onTextChanged() {
@@ -373,11 +373,16 @@ void MainWindow::onAlignRight() { textEdit->setAlignment(Qt::AlignRight); }
 
 void MainWindow::onConnect() {
     // QMessageBox::information(this, "Connect", "Connect clicked");
-    statusBar()->showMessage("Connected", 3000);
-    webSocket.open(QUrl("ws://192.168.0.34:12345"));
+    webSocket.abort();  // Critical: Releases all socket resources
+    QCoreApplication::processEvents();  // Let Qt clean up
+    QTimer::singleShot(100, [this]() {
+        webSocket.open(QUrl("ws://192.168.0.34:12345"));  // Reconnect
+        statusBar()->showMessage("Reconnecting...");
+    });
     connect(&webSocket, &QWebSocket::connected, this, [this]() {
         isConnected = true;
         qDebug() << "Reconnected successfully!";
+        statusBar()->showMessage("Connected");
         sendTextMessage();  // Safe to send now
     });
 
