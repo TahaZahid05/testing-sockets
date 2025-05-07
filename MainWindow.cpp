@@ -1,28 +1,105 @@
 #include "MainWindow.h"
-#include <QCursor>
-#include <QMenuBar>
-#include <QStatusBar>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QTextCharFormat>
+#include <QFont>
+#include <QTextCursor>
+#include <QPrinter>
+#include <QPrintDialog>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QToolButton>
+#include <QMenuBar>
+#include <QStatusBar>
+#include <QCursor>
 #include <QDebug>
 
 //TO-DO: ADD AUTO-GENERATED ID
     MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), currentFile(""), clientId('?'), LastKnownText(""), charAdded(0)
 {
-    // Create central text edit
-    textEdit = new QTextEdit(this);
-    textEdit->setStyleSheet(
-        "QTextEdit {"
-        "  font-family: 'Consolas', monospace;"
-        "  font-size: 12pt;"
-        "  background-color: #f8f8f8;"
-        "  color: black;"
-        "  border: 1px solid #ddd;"
-        "  padding: 10px;"
+    // Create central widget and main layout
+    QWidget *central = new QWidget(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    this->setFixedSize(800, 600);
+
+    // Toolbar Layout
+    QToolBar *toolbar = new QToolBar(this);
+    toolbar->setMovable(false);
+    toolbar->setFixedSize(780,50);
+
+    // Style the toolbar
+    toolbar->setStyleSheet(
+        "QToolBar {"
+        "   background: light gray;"
+        "   spacing: 10px;"
+        "   padding: 5px;"
+        "   border: 2px solid #4a90e2;"
+        "   border-radius: 5px;"
+        "}"
+        "QToolButton {"
+        "   padding: 4px;"
+        "   icon-size: 24px;"
+        "   color: white"
+        "   background: transparent"
         "}"
         );
-    setCentralWidget(textEdit);
+
+    auto createIconButton = [&](const QString &iconPath, void (MainWindow::*slot)(), bool checkable = false) {
+        QToolButton *btn = new QToolButton;
+        btn->setIcon(QIcon(iconPath));
+        btn->setIconSize(QSize(24, 24));
+        btn->setCheckable(checkable);
+        connect(btn, &QToolButton::clicked, this, slot);
+        toolbar->addWidget(btn);
+        return btn;
+    };
+
+    createIconButton(":/icons/icons/rotate-ccw.svg", &MainWindow::onUndo);
+    createIconButton(":/icons/icons/rotate-cw.svg", &MainWindow::onRedo);
+    createIconButton(":/icons/icons/printer.svg", &MainWindow::onPrint);
+    btnBold = createIconButton(":/icons/icons/bold.svg", &MainWindow::onBold, true);
+    btnItalic = createIconButton(":/icons/icons/italic.svg", &MainWindow::onItalic, true);
+    btnUnderline = createIconButton(":/icons/icons/underline.svg", &MainWindow::onUnderline, true);
+    btnAlignLeft = createIconButton(":/icons/icons/align-left.svg", &MainWindow::onAlignLeft, true);
+    btnAlignCenter = createIconButton(":/icons/icons/align-center.svg", &MainWindow::onAlignCenter, true);
+    btnAlignRight = createIconButton(":/icons/icons/align-right.svg", &MainWindow::onAlignRight, true);
+
+    QButtonGroup *alignGroup = new QButtonGroup(this);
+    alignGroup->setExclusive(true);
+    alignGroup->addButton(btnAlignLeft);
+    alignGroup->addButton(btnAlignCenter);
+    alignGroup->addButton(btnAlignRight);
+
+    // Create text edit with styling from file 1
+    textEdit = new QTextEdit;
+    // textEdit->setStyleSheet(
+    //     "QTextEdit {"
+    //     "  font-family: 'Consolas', monospace;"
+    //     "  font-size: 12pt;"
+    //     "  background-color: #f8f8f8;"
+    //     "  color: black;"
+    //     "  border: 1px solid #ddd;"
+    //     "  padding: 10px;"
+    //     "}"
+    //     );
+        
+    mainLayout->addWidget(toolbar);
+    mainLayout->addWidget(textEdit);
+
+    // Bottom buttons (Connect / Save)
+    QHBoxLayout *buttonLayout = new QHBoxLayout;
+    QPushButton *btnConnect = new QPushButton("🔗 Connect");
+    QPushButton *btnSave = new QPushButton("💾 Save");
+    connect(btnConnect, &QPushButton::clicked, this, &MainWindow::onConnect);
+    connect(btnSave, &QPushButton::clicked, this, &MainWindow::onSave);
+    buttonLayout->addStretch();
+    buttonLayout->addWidget(btnConnect);
+    buttonLayout->addWidget(btnSave);
+
+    mainLayout->addLayout(buttonLayout);
+    central->setLayout(mainLayout);
+    setCentralWidget(central);
 
     LastKnownText = textEdit->toPlainText();
 
@@ -56,9 +133,7 @@
     textEdit->installEventFilter(this);
     textEdit->setReadOnly(false);
 
-
-
-    // Create other UI components
+    // Create other UI components from file 1
     createActions();
     createMenus();
     createStatusBar();
@@ -67,9 +142,19 @@
     setWindowTitle("Text Editor");
     resize(800, 600);
 
-    webSocket.open(QUrl("ws://192.168.0.34:12345"));
-
-
+// <<<<<<< fixed-delete
+//     webSocket.open(QUrl("ws://192.168.0.34:12345"));
+// =======
+    webSocket.open(QUrl("ws://192.168.164.150:12345"));
+// >>>>>>> main
+    // webSocket.open(QUrl("wss://46b9-103-125-241-66.ngrok-free.app"));
+    // webSocket.open(QUrl("wss://f023-111-88-45-254.ngrok-free.app"));  // Use "wss://" for secure WebSockets
+    connect(textEdit, &QTextEdit::cursorPositionChanged, [=]() {
+        QTextCharFormat fmt = textEdit->currentCharFormat();
+        btnBold->setChecked(fmt.fontWeight() == QFont::Bold);
+        btnItalic->setChecked(fmt.fontItalic());
+        btnUnderline->setChecked(fmt.fontUnderline());
+    });
 }
 
 void MainWindow::onPingReceived(quint64 elapsedTime, const QByteArray &payload) {
@@ -164,19 +249,11 @@ void MainWindow::onMessageReceived(QString message) {
 }
 
 
-
 void MainWindow::onDisconnected() {
-    // textEdit->append("[System] Disconnected from server.");
     statusBar()->showMessage("Disconnected", 3000);
 }
 
 void MainWindow::onTextChanged() {
-
-    // QString text = textEdit->toPlainText();
-    // if (webSocket.isValid() && !text.isEmpty()) {
-    //     webSocket.sendTextMessage(text);
-    //     qDebug() << "Sent:" << text;
-    // }
     if (isRemoteChange) {
         return; // Skip processing if change came from remote
     }
@@ -201,7 +278,6 @@ void MainWindow::onTextChanged() {
         QString inserted = currentText.mid(LastKnownText.length()-commonSuffix,1);
         string prev_id = "";
         int pos = LastKnownText.length()-commonSuffix;
-        // qDebug() << currentText.length();
         for (const auto& node: r1.getNodes()) {
             if (!node.is_deleted){
                 if(r1.getNodeIndex(node) == pos-1) {
@@ -210,11 +286,9 @@ void MainWindow::onTextChanged() {
                 }
             }
         }
-        // qDebug() << currentText.length();
         string id = clientId + to_string(charAdded);
         string val = inserted.toStdString();
         std::map<char, int> version_vector_pass = r1.getVersionVector();
-        // RGA_Node addNode(id,val,r1.getVersionVecotr(),prev_id);
         r1.insert(id,val,version_vector_pass,prev_id);
         QJsonObject op;
         op["type"] = "insert";
@@ -229,15 +303,12 @@ void MainWindow::onTextChanged() {
         op["version"] = versionVec;
         qDebug() << op["value"];
         allOperations.push_back(op);
-        // qDebug() << currentText.length();
     }
     else if(commonPrefix+commonSuffix == currentText.length()) {
-        // Get the deleted string segment (now handles strings instead of chars)
         QString deletedStr = LastKnownText.mid(currentText.length()-commonSuffix, 1);
         string deletedValue = deletedStr.toStdString();
         int pos = currentText.length()-commonSuffix;
 
-        // Find and remove the corresponding node
         for (const auto& node: r1.getNodes()) {
             if(node.value == deletedValue && r1.getNodeIndex(node) == pos) {
                 QJsonObject op;
@@ -253,14 +324,11 @@ void MainWindow::onTextChanged() {
     LastKnownText = currentText;
     r1.print_document();
     debounceTimer.start(3000);
-
 }
 
 void MainWindow::sendTextMessage() {
-    // qDebug() << "Checking: " << allOperations.size();
     for(QJsonObject &obj : allOperations) {
         if (!obj.contains("cursor_pos")) {
-            // Add current cursor position if not already set
             obj["cursor_pos"] = textEdit->textCursor().position();
         }
         if (isConnected) {
@@ -273,12 +341,50 @@ void MainWindow::sendTextMessage() {
     }
 }
 
+// UI-related methods from file 2
+void MainWindow::onUndo() { textEdit->undo(); }
+void MainWindow::onRedo() { textEdit->redo(); }
+void MainWindow::onPrint() {
+    QPrinter printer;
+    QPrintDialog dlg(&printer, this);
+    if (dlg.exec() == QDialog::Accepted) textEdit->print(&printer);
+}
+void MainWindow::onBold() {
+    QTextCharFormat fmt;
+    fmt.setFontWeight(btnBold->isChecked() ? QFont::Bold : QFont::Normal);
+    QTextCursor cursor = textEdit->textCursor();
+    cursor.mergeCharFormat(fmt);
+}
+void MainWindow::onItalic() {
+    QTextCharFormat fmt;
+    fmt.setFontItalic(btnItalic->isChecked());
+    QTextCursor cursor = textEdit->textCursor();
+    cursor.mergeCharFormat(fmt);
+}
+void MainWindow::onUnderline() {
+    QTextCharFormat fmt;
+    fmt.setFontUnderline(btnUnderline->isChecked());
+    QTextCursor cursor = textEdit->textCursor();
+    cursor.mergeCharFormat(fmt);
+}
+void MainWindow::onAlignLeft() { textEdit->setAlignment(Qt::AlignLeft); }
+void MainWindow::onAlignCenter() { textEdit->setAlignment(Qt::AlignCenter); }
+void MainWindow::onAlignRight() { textEdit->setAlignment(Qt::AlignRight); }
 
-MainWindow::~MainWindow()
-{
-
+void MainWindow::onConnect() { QMessageBox::information(this, "Connect", "Connect clicked"); }
+void MainWindow::onSave() {
+    QString file = QFileDialog::getSaveFileName(this, "Save File");
+    if (!file.isEmpty()) {
+        QFile f(file);
+        if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            QTextStream out(&f);
+            out << textEdit->toPlainText();
+            f.close();
+        }
+    }
 }
 
+// File operations from file 1
 void MainWindow::createActions()
 {
     // File actions
@@ -292,10 +398,10 @@ void MainWindow::createActions()
     openAct->setStatusTip("Open an existing file");
     connect(openAct, &QAction::triggered, this, &MainWindow::openFile);
 
-    saveAct = new QAction("&Save", this);
-    saveAct->setShortcut(QKeySequence::Save);
-    saveAct->setStatusTip("Save the document to disk");
-    connect(saveAct, &QAction::triggered, this, &MainWindow::saveAsFile);  // Connect to saveAsFile
+    // saveAct = new QAction("&Save", this);
+    // saveAct->setShortcut(QKeySequence::Save);
+    // saveAct->setStatusTip("Save the document to disk");
+    // connect(saveAct, &QAction::triggered, this, &MainWindow::saveAsFile);  // Connect to saveAsFile
 
     saveAsAct = new QAction("Save &As...", this);
     saveAsAct->setShortcut(QKeySequence::SaveAs);
@@ -312,9 +418,9 @@ void MainWindow::createActions()
     aboutAct->setStatusTip("Show the application's About box");
     connect(aboutAct, &QAction::triggered, this, &MainWindow::about);
 
-    reconnectAct = new QAction("Reconnect", this);
-    reconnectAct->setStatusTip("Reconnect with the server");
-    connect(reconnectAct, &QAction::triggered, this, &MainWindow::reconnect);
+    // reconnectAct = new QAction("Reconnect", this);
+    // reconnectAct->setStatusTip("Reconnect with the server");
+    // connect(reconnectAct, &QAction::triggered, this, &MainWindow::reconnect);
 }
 
 void MainWindow::reconnect()
@@ -332,14 +438,12 @@ void MainWindow::reconnect()
     webSocket.open(QUrl("ws://192.168.0.34:12345"));
 }
 
-
 void MainWindow::createMenus()
 {
     // File menu
     QMenu *fileMenu = menuBar()->addMenu("&File");
     fileMenu->addAction(newAct);
     fileMenu->addAction(openAct);
-    // fileMenu->addAction(saveAct);
     fileMenu->addAction(saveAsAct);
     fileMenu->addSeparator();
     fileMenu->addAction(exitAct);
@@ -516,4 +620,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
     } else {
         event->ignore();
     }
+}
+
+MainWindow::~MainWindow()
+{
 }
