@@ -145,7 +145,7 @@
 // <<<<<<< fixed-delete
 //     webSocket.open(QUrl("ws://192.168.0.34:12345"));
 // =======
-    webSocket.open(QUrl("ws://192.168.164.150:12345"));
+    webSocket.open(QUrl("ws://192.168.0.34:12345"));
 // >>>>>>> main
     // webSocket.open(QUrl("wss://46b9-103-125-241-66.ngrok-free.app"));
     // webSocket.open(QUrl("wss://f023-111-88-45-254.ngrok-free.app"));  // Use "wss://" for secure WebSockets
@@ -371,7 +371,17 @@ void MainWindow::onAlignLeft() { textEdit->setAlignment(Qt::AlignLeft); }
 void MainWindow::onAlignCenter() { textEdit->setAlignment(Qt::AlignCenter); }
 void MainWindow::onAlignRight() { textEdit->setAlignment(Qt::AlignRight); }
 
-void MainWindow::onConnect() { QMessageBox::information(this, "Connect", "Connect clicked"); }
+void MainWindow::onConnect() {
+    // QMessageBox::information(this, "Connect", "Connect clicked");
+    statusBar()->showMessage("Connected", 3000);
+    connect(&webSocket, &QWebSocket::connected, this, [this]() {
+        isConnected = true;
+        qDebug() << "Reconnected successfully!";
+        sendTextMessage();  // Safe to send now
+    });
+
+    webSocket.open(QUrl("ws://192.168.0.34:12345"));
+}
 void MainWindow::onSave() {
     QString file = QFileDialog::getSaveFileName(this, "Save File");
     if (!file.isEmpty()) {
@@ -423,20 +433,14 @@ void MainWindow::createActions()
     // connect(reconnectAct, &QAction::triggered, this, &MainWindow::reconnect);
 }
 
-void MainWindow::reconnect()
-{
-    // webSocket.open(QUrl("ws://192.168.0.34:12345"));
-    // isConnected = true;
-    // sendTextMessage();
+// void MainWindow::reconnect()
+// {
+//     // webSocket.open(QUrl("ws://192.168.0.34:12345"));
+//     // isConnected = true;
+//     // sendTextMessage();
 
-    connect(&webSocket, &QWebSocket::connected, this, [this]() {
-        isConnected = true;
-        qDebug() << "Reconnected successfully!";
-        sendTextMessage();  // Safe to send now
-    });
 
-    webSocket.open(QUrl("ws://192.168.0.34:12345"));
-}
+// }
 
 void MainWindow::createMenus()
 {

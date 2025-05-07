@@ -49,7 +49,7 @@ private slots:
     void openFile();
     bool saveAsFile();
     void about();
-    void reconnect();
+    // void reconnect();
 
     // WebSocket operations
     void onConnected();
