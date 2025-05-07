@@ -243,7 +243,6 @@ void MainWindow::onTextChanged() {
     //        LastKnownText[LastKnownText.length() - 1 - commonSuffix] == currentText[currentText.length() - 1 - commonSuffix]) {
     //     commonSuffix++;
     // }
-    qDebug () << commonPrefix << " " << commonSuffix;
     if(currentText.length() == LastKnownText.length()){
         QString inserted = currentText[cursorPos-1];
         string prev_id = "";
