@@ -448,10 +448,11 @@ void MainWindow::createMenus()
     fileMenu->addSeparator();
     fileMenu->addAction(exitAct);
 
+
     // Help menu
     QMenu *helpMenu = menuBar()->addMenu("&Help");
     helpMenu->addAction(aboutAct);
-    helpMenu->addAction(reconnectAct);
+    // helpMenu->addAction(reconnectAct);
 }
 
 void MainWindow::createStatusBar()
