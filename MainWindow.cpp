@@ -14,21 +14,17 @@
 #include <QCursor>
 #include <QDebug>
 
-//TO-DO: ADD AUTO-GENERATED ID
     MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), currentFile(""), clientId('?'), LastKnownText(""), charAdded(0)
 {
-    // Create central widget and main layout
     QWidget *central = new QWidget(this);
     QVBoxLayout *mainLayout = new QVBoxLayout;
     this->setFixedSize(800, 600);
 
-    // Toolbar Layout
     QToolBar *toolbar = new QToolBar(this);
     toolbar->setMovable(false);
     toolbar->setFixedSize(780,50);
 
-    // Style the toolbar
     toolbar->setStyleSheet(
         "QToolBar {"
         "   background: light gray;"
@@ -71,7 +67,6 @@
     alignGroup->addButton(btnAlignCenter);
     alignGroup->addButton(btnAlignRight);
 
-    // Create text edit with styling from file 1
     textEdit = new QTextEdit;
     // textEdit->setStyleSheet(
     //     "QTextEdit {"
@@ -87,7 +82,6 @@
     mainLayout->addWidget(toolbar);
     mainLayout->addWidget(textEdit);
 
-    // Bottom buttons (Connect / Save)
     QHBoxLayout *buttonLayout = new QHBoxLayout;
     QPushButton *btnConnect = new QPushButton("🔗 Connect");
     QPushButton *btnSave = new QPushButton("💾 Save");
@@ -103,7 +97,6 @@
 
     LastKnownText = textEdit->toPlainText();
 
-    // WebSocket connections (from your ChatWindow)
     connect(&webSocket, &QWebSocket::connected, this, &MainWindow::onConnected);
     connect(&webSocket, &QWebSocket::textMessageReceived, this, &MainWindow::onMessageReceived);
     connect(&webSocket, &QWebSocket::disconnected, this, &MainWindow::onDisconnected);
@@ -133,12 +126,10 @@
     textEdit->installEventFilter(this);
     textEdit->setReadOnly(false);
 
-    // Create other UI components from file 1
     createActions();
     createMenus();
     createStatusBar();
 
-    // Window properties
     setWindowTitle("Text Editor");
     resize(800, 600);
 
@@ -188,17 +179,15 @@ void MainWindow::onConnected() {
 void MainWindow::onMessageReceived(QString message) {
     qDebug() << "Received message:" << message;
 
-    // Check if message is from server (not JSON)
     if (message.startsWith("[Server] You are Client ID: ")) {
         QString idStr = message.section(':', -1).trimmed();
         if (!idStr.isEmpty() && idStr.length() == 1) {
-            clientId = idStr[0].toLatin1();  // Assign client ID
+            clientId = idStr[0].toLatin1(); 
             qDebug() << "Assigned client ID:" << clientId;
         }
         return;
     }
 
-    // Assume remaining messages are JSON-formatted
     QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8());
     if (!doc.isObject()) {
         qWarning() << "Invalid JSON message received";
@@ -208,7 +197,7 @@ void MainWindow::onMessageReceived(QString message) {
     QJsonObject obj = doc.object();
     QString type = obj["type"].toString();
 
-    isRemoteChange = true; // Mark as remote change
+    isRemoteChange = true;
 
     if (type == "insert") {
         string id = obj["id"].toString().toStdString();
@@ -232,7 +221,6 @@ void MainWindow::onMessageReceived(QString message) {
         r1.remove(id);
     }
 
-    // Preserve cursor position during remote updates
     int oldCursorPos = textEdit->textCursor().position();
     QString newText = QString::fromStdString(r1.print_document());
 
@@ -256,7 +244,7 @@ void MainWindow::onDisconnected() {
 
 void MainWindow::onTextChanged() {
     if (isRemoteChange) {
-        return; // Skip processing if change came from remote
+        return; 
     }
     QString currentText = textEdit->toPlainText();
     qDebug() << currentText;
@@ -342,7 +330,6 @@ void MainWindow::sendTextMessage() {
     }
 }
 
-// UI-related methods from file 2
 void MainWindow::onUndo() { textEdit->undo(); }
 void MainWindow::onRedo() { textEdit->redo(); }
 void MainWindow::onPrint() {
@@ -374,17 +361,17 @@ void MainWindow::onAlignRight() { textEdit->setAlignment(Qt::AlignRight); }
 
 void MainWindow::onConnect() {
     // QMessageBox::information(this, "Connect", "Connect clicked");
-    webSocket.abort();  // Critical: Releases all socket resources
-    QCoreApplication::processEvents();  // Let Qt clean up
+    webSocket.abort();  
+    QCoreApplication::processEvents(); 
     QTimer::singleShot(100, [this]() {
-        webSocket.open(QUrl("ws://192.168.0.34:12345"));  // Reconnect
+        webSocket.open(QUrl("ws://192.168.0.34:12345")); 
         statusBar()->showMessage("Reconnecting...");
     });
     connect(&webSocket, &QWebSocket::connected, this, [this]() {
         isConnected = true;
         qDebug() << "Reconnected successfully!";
         statusBar()->showMessage("Connected");
-        sendTextMessage();  // Safe to send now
+        sendTextMessage();
     });
 
 
@@ -401,10 +388,8 @@ void MainWindow::onSave() {
     }
 }
 
-// File operations from file 1
 void MainWindow::createActions()
 {
-    // File actions
     newAct = new QAction("&New", this);
     newAct->setShortcut(QKeySequence::New);
     newAct->setStatusTip("Create a new file");
@@ -418,7 +403,7 @@ void MainWindow::createActions()
     // saveAct = new QAction("&Save", this);
     // saveAct->setShortcut(QKeySequence::Save);
     // saveAct->setStatusTip("Save the document to disk");
-    // connect(saveAct, &QAction::triggered, this, &MainWindow::saveAsFile);  // Connect to saveAsFile
+    // connect(saveAct, &QAction::triggered, this, &MainWindow::saveAsFile);  
 
     saveAsAct = new QAction("Save &As...", this);
     saveAsAct->setShortcut(QKeySequence::SaveAs);
@@ -430,7 +415,6 @@ void MainWindow::createActions()
     exitAct->setStatusTip("Exit the application");
     connect(exitAct, &QAction::triggered, this, &QWidget::close);
 
-    // Help actions
     aboutAct = new QAction("&About", this);
     aboutAct->setStatusTip("Show the application's About box");
     connect(aboutAct, &QAction::triggered, this, &MainWindow::about);
@@ -451,7 +435,6 @@ void MainWindow::createActions()
 
 void MainWindow::createMenus()
 {
-    // File menu
     QMenu *fileMenu = menuBar()->addMenu("&File");
     fileMenu->addAction(newAct);
     fileMenu->addAction(openAct);
@@ -460,7 +443,6 @@ void MainWindow::createMenus()
     fileMenu->addAction(exitAct);
 
 
-    // Help menu
     QMenu *helpMenu = menuBar()->addMenu("&Help");
     helpMenu->addAction(aboutAct);
     // helpMenu->addAction(reconnectAct);
@@ -509,12 +491,10 @@ bool MainWindow::saveAsFile()
 {
     QString fileName;
 
-    // If we have a current file and user clicked "Save" (not "Save As")
     if (sender() == saveAct && !currentFile.isEmpty()) {
         fileName = currentFile;
     }
     else {
-        // Otherwise prompt for filename (for "Save As" or first-time save)
         fileName = QFileDialog::getSaveFileName(this, "Save As");
         if (fileName.isEmpty()) {
             return false;
