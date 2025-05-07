@@ -46,6 +46,8 @@ async def echo(websocket):
             available_ids.sort()  
 
         print(f"Client {client_id} removed. Total clients: {len(connected_clients)}")
+        if(len(connected_clients) == 0):
+            message_history.clear()
 
 async def main():
     server = await websockets.serve(echo, "0.0.0.0", 12345)
