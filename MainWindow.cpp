@@ -111,7 +111,7 @@
     setWindowTitle("Text Editor");
     resize(800, 600);
 
-    webSocket.open(QUrl("ws://10.20.1.8:12345"));
+    webSocket.open(QUrl("ws://192.168.213.150:12345"));
     // webSocket.open(QUrl("wss://52fb-103-125-241-66.ngrok-free.app"));
     connect(textEdit, &QTextEdit::cursorPositionChanged, [=]() {
         QTextCharFormat fmt = textEdit->currentCharFormat();
@@ -204,9 +204,9 @@ void MainWindow::onMessageReceived(QString message) {
     disconnect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
     textEdit->setPlainText(newText);
 
-    // QTextCursor cursor = textEdit->textCursor();
-    // cursor.setPosition(std::min<int>(oldCursorPos, static_cast<int>(newText.length())));
-    // textEdit->setTextCursor(cursor);
+    QTextCursor cursor = textEdit->textCursor();
+    cursor.setPosition(std::min<int>(oldCursorPos, static_cast<int>(newText.length())));
+    textEdit->setTextCursor(cursor);
 
     LastKnownText = textEdit->toPlainText();
     connect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
@@ -323,7 +323,7 @@ void MainWindow::onConnect() {
     webSocket.abort();  
     QCoreApplication::processEvents(); 
     QTimer::singleShot(100, [this]() {
-        webSocket.open(QUrl("ws://10.20.1.8:12345"));
+        webSocket.open(QUrl("ws://192.168.213.150:12345"));
         // webSocket.open(QUrl("wss://52fb-103-125-241-66.ngrok-free.app"));
         statusBar()->showMessage("Reconnecting...");
     });
