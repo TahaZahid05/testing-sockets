@@ -12,6 +12,7 @@ release/
 
 # Ignore Qt-specific generated files
 *.moc
+*.user
 *.qmake.stash
 Makefile
 Makefile.Debug
