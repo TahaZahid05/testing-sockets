@@ -209,17 +209,17 @@ void MainWindow::onMessageReceived(QString message) {
 
     int oldCursorPos = textEdit->textCursor().position();
     QString newText = QString::fromStdString(r1.print_document());
+    disconnect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
+    textEdit->setPlainText(newText);
 
-            // Restore cursor to original position
-            QTextCursor cursor = textEdit->textCursor();
-            cursor.setPosition(std::min<int>(oldCursorPos, static_cast<int>(newText.length())));
+    QTextCursor cursor = textEdit->textCursor();
+    cursor.setPosition(std::min<int>(oldCursorPos, static_cast<int>(newText.length())));
+    textEdit->setTextCursor(cursor);
 
-            textEdit->setTextCursor(cursor);
+    LastKnownText = textEdit->toPlainText();
+    connect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
 
-            LastKnownText = textEdit->toPlainText();
-            connect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
-
-            isRemoteChange = false; // Reset flag
+    isRemoteChange = false;
 
 }
 
