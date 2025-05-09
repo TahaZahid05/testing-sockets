@@ -21,17 +21,14 @@
     MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), currentFile(""), clientId('?'), LastKnownText(""), charAdded(0)
 {
-    // Create central widget and main layout
     QWidget *central = new QWidget(this);
     QVBoxLayout *mainLayout = new QVBoxLayout;
     this->setFixedSize(800, 600);
 
-    // Toolbar Layout
     QToolBar *toolbar = new QToolBar(this);
     toolbar->setMovable(false);
     toolbar->setFixedSize(780,50);
 
-    // Style the toolbar
     toolbar->setStyleSheet(
         "QToolBar {"
         "   background: light gray;"
@@ -74,23 +71,11 @@
     alignGroup->addButton(btnAlignCenter);
     alignGroup->addButton(btnAlignRight);
 
-    // Create text edit with styling from file 1
     textEdit = new QTextEdit;
-    // textEdit->setStyleSheet(
-    //     "QTextEdit {"
-    //     "  font-family: 'Consolas', monospace;"
-    //     "  font-size: 12pt;"
-    //     "  background-color: #f8f8f8;"
-    //     "  color: black;"
-    //     "  border: 1px solid #ddd;"
-    //     "  padding: 10px;"
-    //     "}"
-    //     );
         
     mainLayout->addWidget(toolbar);
     mainLayout->addWidget(textEdit);
 
-    // Bottom buttons (Connect / Save)
     QHBoxLayout *buttonLayout = new QHBoxLayout;
     QPushButton *btnConnect = new QPushButton("🔗 Connect");
     QPushButton *btnSave = new QPushButton("💾 Save");
@@ -106,7 +91,6 @@
 
     LastKnownText = textEdit->toPlainText();
 
-    // WebSocket connections (from your ChatWindow)
     connect(&webSocket, &QWebSocket::connected, this, &MainWindow::onConnected);
     connect(&webSocket, &QWebSocket::textMessageReceived, this, &MainWindow::onMessageReceived);
     connect(&webSocket, &QWebSocket::disconnected, this, &MainWindow::onDisconnected);
@@ -115,43 +99,24 @@
     debounceTimer.setSingleShot(true);
 
     pongReceived = false;
-    currentTimer.setInterval(500);
+    currentTimer.setInterval(5000);
     connect(&currentTimer, &QTimer::timeout, this, &MainWindow::checkDisconnect);
     connect(&webSocket, &QWebSocket::pong, this, &MainWindow::onPingReceived);
     currentTimer.start();
-
-    // Send message on Enter key (like a chat app)
-    // connect(textEdit, &QTextEdit::textChanged, [this]() {
-    //     if (textEdit->toPlainText().endsWith("\n")) {
-    //         QString msg = textEdit->toPlainText().trimmed();
-    //         if (!msg.isEmpty()) {
-    //             webSocket.sendTextMessage(msg);
-    //             textEdit->append("[You] " + msg);
-    //             // textEdit->clear();
-    //         }
-    //     }
-    // });
 
     textEdit->setFocus();
     textEdit->installEventFilter(this);
     textEdit->setReadOnly(false);
 
-    // Create other UI components from file 1
     createActions();
     createMenus();
     createStatusBar();
 
-    // Window properties
     setWindowTitle("Text Editor");
     resize(800, 600);
 
-// <<<<<<< fixed-delete
-//     webSocket.open(QUrl("ws://192.168.0.34:12345"));
-// =======
-    webSocket.open(QUrl("ws://192.168.0.103:12345"));
-// >>>>>>> main
-    // webSocket.open(QUrl("wss://46b9-103-125-241-66.ngrok-free.app"));
-    // webSocket.open(QUrl("wss://f023-111-88-45-254.ngrok-free.app"));  // Use "wss://" for secure WebSockets
+    webSocket.open(QUrl("ws://192.168.213.150:12345"));
+    // webSocket.open(QUrl("wss://52fb-103-125-241-66.ngrok-free.app"));
     connect(textEdit, &QTextEdit::cursorPositionChanged, [=]() {
         QTextCharFormat fmt = textEdit->currentCharFormat();
         btnBold->setChecked(fmt.fontWeight() == QFont::Bold);
@@ -192,17 +157,15 @@ void MainWindow::onConnected() {
 void MainWindow::onMessageReceived(QString message) {
     qDebug() << "Received message:" << message;
 
-    // Check if message is from server (not JSON)
     if (message.startsWith("[Server] You are Client ID: ")) {
         QString idStr = message.section(':', -1).trimmed();
         if (!idStr.isEmpty() && idStr.length() == 1) {
-            clientId = idStr[0].toLatin1();  // Assign client ID
+            clientId = idStr[0].toLatin1(); 
             qDebug() << "Assigned client ID:" << clientId;
         }
         return;
     }
 
-    // Assume remaining messages are JSON-formatted
     QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8());
     if (!doc.isObject()) {
         qWarning() << "Invalid JSON message received";
@@ -212,37 +175,36 @@ void MainWindow::onMessageReceived(QString message) {
     QJsonObject obj = doc.object();
     QString type = obj["type"].toString();
 
-        if (type == "insert" || type == "delete") {
-            isRemoteChange = true; // Mark as remote change
+    isRemoteChange = true;
 
-            if (type == "insert") {
-              string id = obj["id"].toString().toStdString();
-              if (r1.search(id) == std::nullopt) {
-                  string value = obj["value"].toString().toStdString();
-                  string prev_id = obj["prev_id"].toString().toStdString();
-                  QJsonObject vvJson = obj["version"].toObject();
-                  map<char, int> node_version_vector;
-                  for (const auto& key : vvJson.keys()) {
-                      char client = key[0].toLatin1();
-                      int seq = vvJson[key].toInt();
-                      node_version_vector[client] = seq;
-                  }
-
-                  RGA_Node newNode(id, value, node_version_vector, prev_id);
-                  r1.merge(newNode);
-              }
-            }
-            else if (type == "delete") {
-              string id = obj["id"].toString().toStdString();
-              r1.remove(id);
+    if (type == "insert") {
+        string id = obj["id"].toString().toStdString();
+        if (r1.searchNode(id) == nullptr) {
+            string value = obj["value"].toString().toStdString();
+            string prev_id = obj["prev_id"].toString().toStdString();
+            QJsonObject vvJson = obj["version"].toObject();
+            map<char, int> node_version_vector;
+            for (const auto& key : vvJson.keys()) {
+                char client = key[0].toLatin1();
+                int seq = vvJson[key].toInt();
+                node_version_vector[client] = seq;
             }
 
-            // Preserve cursor position during remote updates
-            int oldCursorPos = textEdit->textCursor().position();
-            QString newText = QString::fromStdString(r1.print_document());
+            RGA_Node newNode(id, value, node_version_vector, prev_id);
+            r1.merge(newNode);
+            charAdded += 1;
+        }
+    }
+    else if (type == "delete") {
+        string id = obj["id"].toString().toStdString();
+        if(r1.searchNode(id) != nullptr && !(r1.searchNode(id)->is_deleted)){
+            string id = obj["id"].toString().toStdString();
+            r1.remove(id);
+        }
+    }
 
-            disconnect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
-            textEdit->setPlainText(newText);
+    int oldCursorPos = textEdit->textCursor().position();
+    QString newText = QString::fromStdString(r1.print_document());
 
             // Restore cursor to original position
             QTextCursor cursor = textEdit->textCursor();
@@ -265,79 +227,20 @@ void MainWindow::onDisconnected() {
 }
 
 void MainWindow::onTextChanged() {
-    if (isRemoteChange) {
-        return; // Skip processing if change came from remote
-    }
+    //cursorPos in insert: pos-1
+    //cursPos in delete = pos
+    int cursorPos = textEdit->textCursor().position();
     QString currentText = textEdit->toPlainText();
-    qDebug() << "Current Text:" << currentText;
-    qDebug() << "Last Known Text:" << LastKnownText;
-
-    // Handle first character after file load or new file
-    if (LastKnownText.isEmpty() && !currentText.isEmpty()) {
-        string id = clientId + to_string(charAdded);
-        string val = currentText.toStdString();
-        std::map<char, int> version_vector_pass = r1.getVersionVector();
-
-        // Insert first character
-        r1.insert(id, val, version_vector_pass, "");
-
-        QJsonObject op;
-        op["type"] = "insert";
-        op["id"] = QString::fromStdString(id);
-        op["value"] = currentText;
-        op["prev_id"] = "";
-
-        map<char, int> temp_vector = r1.getNodeVersionVector(id);
-        QJsonObject versionVec;
-        for (const auto& [client, seq] : temp_vector) {
-            versionVec[QString(client)] = seq;
-        }
-        op["version"] = versionVec;
-
-        qDebug() << "First character operation:" << op;
-        allOperations.push_back(op);
-
-        charAdded += 1;
-        LastKnownText = currentText;
-
-        // Send immediately without debouncing
-        debounceTimer.stop();
-        sendTextMessage();
+    if (isRemoteChange || currentText.length() == LastKnownText.length()) {
         return;
     }
-
-    // Existing text diff logic for non-empty documents
-    if (currentText.isEmpty() || LastKnownText.isEmpty()) {
-        return;
-    }
-
-    int commonPrefix = 0;
-    while (commonPrefix < LastKnownText.length() &&
-           commonPrefix < currentText.length() &&
-           LastKnownText[commonPrefix] == currentText[commonPrefix]) {
-        commonPrefix++;
-    }
-
-    int commonSuffix = 0;
-    while (commonSuffix < LastKnownText.length() - commonPrefix &&
-           commonSuffix < currentText.length() - commonPrefix &&
-           LastKnownText[LastKnownText.length() - 1 - commonSuffix] ==
-               currentText[currentText.length() - 1 - commonSuffix]) {
-        commonSuffix++;
-    }
-
-    qDebug() << "Diff - Common Prefix:" << commonPrefix << "Common Suffix:" << commonSuffix;
-
-    if (commonPrefix + commonSuffix == LastKnownText.length()) {
-        // Insertion case
-        QString inserted = currentText.mid(commonPrefix, currentText.length() - commonPrefix - commonSuffix);
+    if(currentText.length() > LastKnownText.length()){
+        QString inserted = currentText[cursorPos-1];
         string prev_id = "";
-
-        int pos = commonPrefix;
-
-        if (pos > 0) {
-            for (const auto& node : r1.getNodes()) {
-                if (!node.is_deleted && r1.getNodeIndex(node) == pos - 1) {
+        int pos = cursorPos-1;
+        for (const auto& node: r1.getNodes()) {
+            if (!node.is_deleted){
+                if(r1.getNodeIndex(node) == pos-1) {
                     prev_id = node.id;
                     break;
                 }
@@ -358,15 +261,14 @@ void MainWindow::onTextChanged() {
             versionVec[QString(client)] = seq;
         }
         op["version"] = versionVec;
-        qDebug() << op["value"];
+        charAdded += 1;
         allOperations.push_back(op);
         charAdded += 1;
     }
-    else if(commonPrefix+commonSuffix == currentText.length()) {
-        QString deletedStr = LastKnownText.mid(currentText.length()-commonSuffix, 1);
+    else if(LastKnownText.length() > currentText.length()) {
+        QString deletedStr = LastKnownText[cursorPos];
         string deletedValue = deletedStr.toStdString();
-        int pos = currentText.length()-commonSuffix;
-
+        int pos = cursorPos;
         for (const auto& node: r1.getNodes()) {
             if(node.value == deletedValue && r1.getNodeIndex(node) == pos) {
                 QJsonObject op;
@@ -378,9 +280,7 @@ void MainWindow::onTextChanged() {
             }
         }
     }
-
     LastKnownText = currentText;
-    r1.print_document();
     debounceTimer.start(3000);
 }
 
@@ -391,7 +291,6 @@ void MainWindow::sendTextMessage() {
         }
         if (isConnected) {
             webSocket.sendTextMessage(QJsonDocument(obj).toJson());
-            // webSocket.
         }
     }
     if(isConnected) {
@@ -399,7 +298,6 @@ void MainWindow::sendTextMessage() {
     }
 }
 
-// UI-related methods from file 2
 void MainWindow::onUndo() { textEdit->undo(); }
 void MainWindow::onRedo() { textEdit->redo(); }
 void MainWindow::onPrint() {
@@ -430,18 +328,17 @@ void MainWindow::onAlignCenter() { textEdit->setAlignment(Qt::AlignCenter); }
 void MainWindow::onAlignRight() { textEdit->setAlignment(Qt::AlignRight); }
 
 void MainWindow::onConnect() {
-    // QMessageBox::information(this, "Connect", "Connect clicked");
-    webSocket.abort();  // Critical: Releases all socket resources
-    QCoreApplication::processEvents();  // Let Qt clean up
+    webSocket.abort();  
+    QCoreApplication::processEvents(); 
     QTimer::singleShot(100, [this]() {
-        webSocket.open(QUrl("ws://192.168.0.34:12345"));  // Reconnect
+        webSocket.open(QUrl("ws://192.168.213.150:12345"));
+        // webSocket.open(QUrl("wss://52fb-103-125-241-66.ngrok-free.app"));
         statusBar()->showMessage("Reconnecting...");
     });
     connect(&webSocket, &QWebSocket::connected, this, [this]() {
         isConnected = true;
-        qDebug() << "Reconnected successfully!";
         statusBar()->showMessage("Connected");
-        sendTextMessage();  // Safe to send now
+        sendTextMessage();
     });
 
 
@@ -458,10 +355,8 @@ void MainWindow::onSave() {
     }
 }
 
-// File operations from file 1
 void MainWindow::createActions()
 {
-    // File actions
     newAct = new QAction("&New", this);
     newAct->setShortcut(QKeySequence::New);
     newAct->setStatusTip("Create a new file");
@@ -471,11 +366,6 @@ void MainWindow::createActions()
     openAct->setShortcut(QKeySequence::Open);
     openAct->setStatusTip("Open an existing file");
     connect(openAct, &QAction::triggered, this, &MainWindow::openFile);
-
-    // saveAct = new QAction("&Save", this);
-    // saveAct->setShortcut(QKeySequence::Save);
-    // saveAct->setStatusTip("Save the document to disk");
-    // connect(saveAct, &QAction::triggered, this, &MainWindow::saveAsFile);  // Connect to saveAsFile
 
     saveAsAct = new QAction("Save &As...", this);
     saveAsAct->setShortcut(QKeySequence::SaveAs);
@@ -487,7 +377,6 @@ void MainWindow::createActions()
     exitAct->setStatusTip("Exit the application");
     connect(exitAct, &QAction::triggered, this, &QWidget::close);
 
-    // Help actions
     aboutAct = new QAction("&About", this);
     aboutAct->setStatusTip("Show the application's About box");
     connect(aboutAct, &QAction::triggered, this, &MainWindow::about);
@@ -520,18 +409,8 @@ void MainWindow::createActions()
     // connect(reconnectAct, &QAction::triggered, this, &MainWindow::reconnect);
 }
 
-// void MainWindow::reconnect()
-// {
-//     // webSocket.open(QUrl("ws://192.168.0.34:12345"));
-//     // isConnected = true;
-//     // sendTextMessage();
-
-
-// }
-
 void MainWindow::createMenus()
 {
-    // File menu
     QMenu *fileMenu = menuBar()->addMenu("&File");
     fileMenu->addAction(newAct);
     fileMenu->addAction(openAct);
@@ -546,7 +425,6 @@ void MainWindow::createMenus()
     // Help menu
     QMenu *helpMenu = menuBar()->addMenu("&Help");
     helpMenu->addAction(aboutAct);
-    // helpMenu->addAction(reconnectAct);
 }
 
 void MainWindow::createStatusBar()
@@ -574,15 +452,6 @@ void MainWindow::openFile()
     }
 }
 
-// bool MainWindow::saveFile()
-// {
-//     if (currentFile.isEmpty()) {
-//         return saveAsFile();
-//     } else {
-//         return saveFile(currentFile);
-//     }
-// }
-
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
     if (obj == textEdit && event->type() == QEvent::KeyPress) {
@@ -595,12 +464,10 @@ bool MainWindow::saveAsFile()
 {
     QString fileName;
 
-    // If we have a current file and user clicked "Save" (not "Save As")
     if (sender() == saveAct && !currentFile.isEmpty()) {
         fileName = currentFile;
     }
     else {
-        // Otherwise prompt for filename (for "Save As" or first-time save)
         fileName = QFileDialog::getSaveFileName(this, "Save As");
         if (fileName.isEmpty()) {
             return false;
@@ -673,26 +540,6 @@ void MainWindow::loadFile(const QString &fileName)
     setCurrentFile(fileName);
     statusBar()->showMessage("File loaded", 2000);
 }
-
-// bool MainWindow::saveFile(const QString &fileName)
-// {
-//     QFile file(fileName);
-//     if (!file.open(QFile::WriteOnly | QFile::Text)) {
-//         QMessageBox::warning(this, "Text Editor",
-//                              QString("Cannot write file %1:\n%2.")
-//                                  .arg(QDir::toNativeSeparators(fileName), file.errorString()));
-//         return false;
-//     }
-
-//     QTextStream out(&file);
-//     QApplication::setOverrideCursor(Qt::WaitCursor);
-//     out << textEdit->toPlainText();
-//     QApplication::restoreOverrideCursor();
-
-//     setCurrentFile(fileName);
-//     statusBar()->showMessage("File saved", 2000);
-//     return true;
-// }
 
 void MainWindow::setCurrentFile(const QString &fileName)
 {
