@@ -55,6 +55,9 @@ private slots:
     void onTextChanged();
     void sendTextMessage();
 
+    void loadFileFromServer(const QString& filename);
+    void saveFileToServer(const QString& filename);
+    void requestFileList();
     void onPingReceived(quint64 elapsedTime, const QByteArray &payload);
 
     void checkDisconnect();
@@ -81,6 +84,11 @@ private:
     QToolButton *btnBold, *btnItalic, *btnUnderline;
     QToolButton *btnAlignLeft, *btnAlignCenter, *btnAlignRight;
 
+    QAction *openServerAct;
+    QAction *saveServerAct;
+
+
+    // File handling
     QString currentFile;
     QWebSocket webSocket;
 
@@ -92,6 +100,9 @@ private:
     QAction *aboutAct;
     QAction *reconnectAct;
     QTimer debounceTimer;
+
+    void handleFileMessage(const QJsonObject& message);
+    QString currentServerFile;
 
     void createActions();
     void createMenus();
