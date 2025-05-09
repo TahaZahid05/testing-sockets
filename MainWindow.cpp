@@ -115,8 +115,8 @@
     setWindowTitle("Text Editor");
     resize(800, 600);
 
-    webSocket.open(QUrl("ws://192.168.213.150:12345"));
-    // webSocket.open(QUrl("wss://52fb-103-125-241-66.ngrok-free.app"));
+    // webSocket.open(QUrl("ws://192.168.213.150:12345"));
+    webSocket.open(QUrl("wss://5be6-111-88-46-136.ngrok-free.app"));
     connect(textEdit, &QTextEdit::cursorPositionChanged, [=]() {
         QTextCharFormat fmt = textEdit->currentCharFormat();
         btnBold->setChecked(fmt.fontWeight() == QFont::Bold);
@@ -203,6 +203,10 @@ void MainWindow::onMessageReceived(QString message) {
         }
     }
 
+    else if (type == "file_content" || type == "file_list") {
+        handleFileMessage(obj);
+    }
+
     int oldCursorPos = textEdit->textCursor().position();
     QString newText = QString::fromStdString(r1.print_document());
 
@@ -215,10 +219,8 @@ void MainWindow::onMessageReceived(QString message) {
             LastKnownText = textEdit->toPlainText();
             connect(textEdit, &QTextEdit::textChanged, this, &MainWindow::onTextChanged);
 
-            isRemoteChange = false; }// Reset flag
-        else if (type == "file_content" || type == "file_list") {
-            handleFileMessage(obj);
-        }
+            isRemoteChange = false; // Reset flag
+
 }
 
 
@@ -331,8 +333,8 @@ void MainWindow::onConnect() {
     webSocket.abort();  
     QCoreApplication::processEvents(); 
     QTimer::singleShot(100, [this]() {
-        webSocket.open(QUrl("ws://192.168.213.150:12345"));
-        // webSocket.open(QUrl("wss://52fb-103-125-241-66.ngrok-free.app"));
+        // webSocket.open(QUrl("ws://192.168.213.150:12345"));
+        webSocket.open(QUrl("wss://5be6-111-88-46-136.ngrok-free.app"));
         statusBar()->showMessage("Reconnecting...");
     });
     connect(&webSocket, &QWebSocket::connected, this, [this]() {
