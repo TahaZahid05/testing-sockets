@@ -192,7 +192,7 @@ void MainWindow::onMessageReceived(QString message) {
 
             RGA_Node newNode(id, value, node_version_vector, prev_id);
             r1.merge(newNode);
-            charAdded += 1;
+            // charAdded += 1;
         }
     }
     else if (type == "delete") {
@@ -265,7 +265,7 @@ void MainWindow::onTextChanged() {
         op["version"] = versionVec;
         charAdded += 1;
         allOperations.push_back(op);
-        charAdded += 1;
+        // charAdded += 1;
     }
     else if(LastKnownText.length() > currentText.length()) {
         QString deletedStr = LastKnownText[cursorPos];
